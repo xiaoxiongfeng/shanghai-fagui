@@ -1,0 +1,18 @@
+jtype: Flow
+executors:
+  - name: segmenter
+    uses: SentenceSegmenter
+  - name: encoder
+    uses: 'jinahub+docker://TextPaddleEncoder'
+    with:
+      model_name: 'ernie_tiny'
+      default_batch_size: 8,
+      default_traversal_paths:
+        - 'c'
+    volumes: '${HOME}/.paddlehub:/root/.paddlehub'
+#  - name: indexer
+#    uses: 'jinahub+docker://PostgreSQLIndexer'
+#    with:
+#      dump_path: './workspace'
+#      default_traversal_paths:
+#        - 'c'
