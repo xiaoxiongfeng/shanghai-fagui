@@ -6,13 +6,15 @@ executors:
     uses: 'jinahub+docker://TextPaddleEncoder'
     with:
       model_name: 'ernie_tiny'
-      default_batch_size: 8,
+      default_batch_size: 1
       default_traversal_paths:
         - 'c'
-    volumes: '${HOME}/.paddlehub:/root/.paddlehub'
-#  - name: indexer
-#    uses: 'jinahub+docker://PostgreSQLIndexer'
-#    with:
-#      dump_path: './workspace'
-#      default_traversal_paths:
-#        - 'c'
+    volumes:
+        - '${HOME}/.paddlehub:/root/.paddlehub'
+        - '${HOME}/.paddlenlp:/root/.paddlenlp'
+  - name: indexer
+    uses: 'jinahub+docker://PostgreSQLIndexer'
+    with:
+      dump_path: './workspace'
+      default_traversal_paths:
+        - 'c'
