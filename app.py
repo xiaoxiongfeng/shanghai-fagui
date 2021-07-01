@@ -4,14 +4,18 @@ import os
 from jina import Document, DocumentArray, Executor, Flow, requests
 
 
+os.environ['JINA_DUMP_PATH'] = './workspace/dump'
+
+
 def load_data(data_fn='toy-data/case_parse_10.json'):
+    counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
             doc = Document(json.loads(l))
-            doc.id = doc.tags['_id']
-            doc.tags.pop('_id')
             try:
                 doc.text = doc.tags['_source']['title']
+                doc.id = counter
+                counter += 1
                 yield doc
             except KeyError as e:
                 continue
@@ -31,6 +35,7 @@ class SentenceSegmenter(Executor):
                         parent_id=doc.id,
                         location=[s_idx, ss_idx])
                     doc.chunks.append(_chunk)
+        return DocumentArray([d for d in docs if d.chunks])
 
 
 def check_index_resp(resp):
@@ -38,10 +43,18 @@ def check_index_resp(resp):
         doc = Document(d)
         print(f'id: {doc.id}')
         print(f'+- chunks: {len(doc.chunks)}')
-        print(f'+- emb: {doc.embedding.shape if doc.embedding else None}')
+        print(f'+- emb: {doc.embedding.shape if doc.embedding is not None else None}')
 
 
-f = Flow.load_config('flows/index.yml')
+f_index = Flow.load_config('flows/index.yml')
+f_query = Flow.load_config('flows/query.yml')
 
-with f:
-    f.post(on='/index', inputs=load_data, on_done=check_index_resp)
+with f_index:
+    f_index.post(on='/index', inputs=load_data, on_done=check_index_resp)
+    f_index.post(
+        on='/dump', target_peapod='indexer', parameters={'dump_path': os.environ.get('JINA_DUMP_PATH'), 'shards': 1})
+
+with f_query:
+    results = f_query.post(
+        on='/search', inputs=load_data, parameters={'top_k': 3, 'traversal_paths': ['c', ]}, return_results=True)
+    print(f'result: {results[0].docs[0]}')
