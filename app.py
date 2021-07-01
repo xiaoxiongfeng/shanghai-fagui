@@ -50,7 +50,7 @@ class Ranker(Executor):
                 result[m.parent_id].append(m)
             ranked_matches = []
             for m_id, m_list in result.items():
-                sorted_list = sorted(m_list, key=lambda m: m.scores['similarity'].value, reverse=True)
+                sorted_list = sorted(m_list, key=lambda x: x.scores['similarity'].value, reverse=True)
                 match = sorted_list[0]
                 match.id = m_id
                 match.pop('embedding')
@@ -66,19 +66,11 @@ class RemoveTags(Executor):
             d.pop('tags')
 
 
-def check_index_resp(resp):
-    for d in resp.data.docs:
-        doc = Document(d)
-        print(f'id: {doc.id}')
-        print(f'+- chunks: {len(doc.chunks)}')
-        print(f'+- emb: {doc.embedding.shape if doc.embedding is not None else None}')
-
-
 f_index = Flow.load_config('flows/index.yml')
 f_query = Flow.load_config('flows/query.yml')
 
 with f_index:
-    f_index.post(on='/index', inputs=load_data, on_done=print)
+    f_index.post(on='/index', inputs=load_data)
     f_index.post(
         on='/dump',
         target_peapod='chunk_indexer',
@@ -90,5 +82,8 @@ with f_index:
 
 with f_query:
     results = f_query.post(
-        on='/search', inputs=load_data, parameters={'top_k': 3, 'is_update': True}, return_results=True)
+        on='/search',
+        inputs=load_data,
+        parameters={'top_k': 3},
+        return_results=True)
     print(f'result: {results[0].docs}')
