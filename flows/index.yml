@@ -10,8 +10,22 @@ executors:
       default_batch_size: 1
       default_traversal_paths:
         - 'c'
-  - name: indexer
+  - name: chunk_indexer
     uses: 'jinahub://LMDBIndexer'
     override_with:
       default_traversal_paths:
         - 'c'
+    override_meta:
+      workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: remover
+    uses: RemoveTags
+    needs: gateway
+  - name: doc_indexer
+    uses: 'jinahub://LMDBIndexer'
+    override_with:
+      default_traversal_paths:
+        - 'r'
+    override_meta:
+      workspace: ${JINA_WORKSPACE_DOC}
+  - name: joiner
+    needs: [chunk_indexer, doc_indexer]

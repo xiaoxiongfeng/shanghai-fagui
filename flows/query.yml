@@ -10,13 +10,27 @@ executors:
       default_batch_size: 8
       default_traversal_paths:
         - 'c'
-  - name: vec_indexer
+  - name: chunk_vec_indexer
     uses: 'jinahub://NumpySearcher'
     override_with:
-      dump_path: $JINA_DUMP_PATH
+      dump_path: ${JINA_DUMP_PATH_CHUNK}
       default_traversal_paths: ['c', ]
-  - name: key_indexer
+    override_metas:
+      workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: chunk_kv_indexer
     uses: 'jinahub://FileSearcher'
     override_with:
-      dump_path: $JINA_DUMP_PATH
+      dump_path: ${JINA_DUMP_PATH_CHUNK}
       default_traversal_paths: ['m', ]
+    override_metas:
+      workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: ranker
+    uses: Ranker
+  - name: doc_kv_indexer
+    uses: 'jinahub://FileSearcher'
+    override_with:
+      dump_path: ${JINA_DUMP_PATH_DOC}
+      default_traversal_paths: ['m', ]
+    override_metas:
+      workspace: ${JINA_WORKSPACE_DOC}
+

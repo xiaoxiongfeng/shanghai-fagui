@@ -3,7 +3,10 @@ import os
 
 from jina import Document, DocumentArray, Executor, Flow, requests
 
-os.environ['JINA_DUMP_PATH'] = './workspace/dump'
+os.environ['JINA_DUMP_PATH_DOC'] = './workspace/dump_doc'
+os.environ['JINA_DUMP_PATH_CHUNK'] = './workspace/dump_chunk'
+os.environ['JINA_WORKSPACE_DOC'] = './workspace/ws_doc'
+os.environ['JINA_WORKSPACE_CHUNK'] = './workspace/ws_chunk'
 
 
 def load_data(data_fn='toy-data/case_parse_10.json'):
@@ -37,13 +40,30 @@ class SentenceSegmenter(Executor):
         return DocumentArray([d for d in docs if d.chunks])
 
 
-class ReplaceMatchId(Executor):
+class Ranker(Executor):
     @requests(on='/search')
-    def replace(self, docs: DocumentArray, **kwargs):
+    def rank(self, docs: DocumentArray, **kwargs):
+        from collections import defaultdict
         for doc in docs:
+            result = defaultdict(list)
             for m in doc.matches:
-                print(f'vector match: {m}')
-                m.id = m.parent_id
+                result[m.parent_id].append(m)
+            ranked_matches = []
+            for m_id, m_list in result.items():
+                sorted_list = sorted(m_list, key=lambda m: m.scores['similarity'].value, reverse=True)
+                match = sorted_list[0]
+                match.id = m_id
+                match.pop('embedding')
+                ranked_matches.append(match)
+            doc.matches = ranked_matches
+            doc.pop('chunks', 'tags')
+
+
+class RemoveTags(Executor):
+    @requests
+    def remove(self, docs, **kwargs):
+        for d in docs:
+            d.pop('tags')
 
 
 def check_index_resp(resp):
@@ -58,11 +78,17 @@ f_index = Flow.load_config('flows/index.yml')
 f_query = Flow.load_config('flows/query.yml')
 
 with f_index:
-    f_index.post(on='/index', inputs=load_data, on_done=check_index_resp)
+    f_index.post(on='/index', inputs=load_data, on_done=print)
     f_index.post(
-        on='/dump', target_peapod='indexer', parameters={'dump_path': os.environ.get('JINA_DUMP_PATH'), 'shards': 1})
+        on='/dump',
+        target_peapod='chunk_indexer',
+        parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_CHUNK'), 'shards': 1})
+    f_index.post(
+        on='/dump',
+        target_peapod='doc_indexer',
+        parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1})
 
 with f_query:
     results = f_query.post(
-        on='/search', inputs=load_data, parameters={'top_k': 3}, return_results=True)
-    print(f'result: {results[0].docs[0]}')
+        on='/search', inputs=load_data, parameters={'top_k': 3, 'is_update': True}, return_results=True)
+    print(f'result: {results[0].docs}')
