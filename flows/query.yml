@@ -10,7 +10,13 @@ executors:
       default_batch_size: 8
       default_traversal_paths:
         - 'c'
-  - name: indexer
-    uses: 'jinahub://NumpyFileSearcher'
+  - name: vec_indexer
+    uses: 'jinahub://NumpySearcher'
     override_with:
       dump_path: $JINA_DUMP_PATH
+      default_traversal_paths: ['c', ]
+  - name: key_indexer
+    uses: 'jinahub://FileSearcher'
+    override_with:
+      dump_path: $JINA_DUMP_PATH
+      default_traversal_paths: ['m', ]
