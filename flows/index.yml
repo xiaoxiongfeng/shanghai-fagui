@@ -11,7 +11,7 @@ executors:
       default_traversal_paths:
         - 'c'
   - name: chunk_indexer
-    uses: 'jinahub://LMDBIndexer'
+    uses: 'jinahub://LMDBStorage'
     override_with:
       default_traversal_paths:
         - 'c'
@@ -21,7 +21,7 @@ executors:
     uses: RemoveTags
     needs: gateway
   - name: doc_indexer
-    uses: 'jinahub://LMDBIndexer'
+    uses: 'jinahub://LMDBStorage'
     override_with:
       default_traversal_paths:
         - 'r'
