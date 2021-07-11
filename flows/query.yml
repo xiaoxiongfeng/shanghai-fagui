@@ -4,10 +4,11 @@ executors:
   - name: segmenter
     uses: SentenceSegmenter
   - name: encoder
-    uses: 'jinahub://TextPaddleEncoder'
+    uses: 'jinahub://TransformerTFTextEncoder'
+    parallel: 1
     override_with:
-      model_name: 'ernie_tiny'
-      default_batch_size: 8
+      pretrained_model_name_or_path: 'hfl/chinese-legal-electra-small-generator'
+      default_batch_size: 16
       default_traversal_paths:
         - 'c'
   - name: chunk_vec_indexer
