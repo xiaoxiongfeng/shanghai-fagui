@@ -39,3 +39,10 @@ because it is in the index.
 ```
 python app.py -t query
 ```
+
+### Query with RESTful API
+
+Run the following command and open 
+```shell
+python app.py -t query_restful
+```
