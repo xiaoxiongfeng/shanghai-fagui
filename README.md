@@ -42,7 +42,10 @@ python app.py -t query
 
 ### Query with RESTful API
 
-Run the following command and open 
+Run the following command and open [http://localhost:45678/docs](http://localhost:45678/docs) in your brower.
+
 ```shell
 python app.py -t query_restful
 ```
+![](.github/restful.png)
+![](.github/restful.gif)
