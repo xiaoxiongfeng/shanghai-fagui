@@ -59,6 +59,7 @@ def query_restful():
     f_query = Flow.load_config(
         'flows/query.yml',
         override_with={'protocol': 'http', 'cors': True})
+    f_query.expose_endpoint('/search', summary='Search the docs')
     with f_query:
         f_query.block()
 

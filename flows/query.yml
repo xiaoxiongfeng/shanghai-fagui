@@ -1,5 +1,9 @@
 jtype: Flow
 version: '1'
+with:
+  port_expose: 45678
+  no_debug_endpoints: True
+  no_crud_endpoints: True
 executors:
   - name: segmenter
     uses: SentenceSegmenter
