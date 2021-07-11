@@ -30,7 +30,7 @@ def index():
     f_index = Flow.load_config('flows/index.yml')
 
     with f_index:
-        f_index.post(on='/index', inputs=load_data)
+        f_index.post(on='/index', inputs=load_data, request_size=16)
         f_index.post(
             on='/dump',
             target_peapod='chunk_indexer',

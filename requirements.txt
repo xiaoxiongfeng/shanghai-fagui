@@ -4,4 +4,4 @@ sentencepiece==0.1.96
 git+https://github.com/jina-ai/jina-commons
 lmdb==1.2.1
 click==7.1.2
-jina[hub]==2.0.0
+git+https://github.com/jina-ai/jina.git@fix-targepeapod-2910#egg=jina[hub,http]
