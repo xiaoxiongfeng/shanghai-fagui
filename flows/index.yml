@@ -16,6 +16,7 @@ executors:
   - name: chunk_indexer
     uses: 'jinahub://LMDBStorage'
     override_with:
+      map_size: 10485760000  # in bytes, 10 GB
       default_traversal_paths:
         - 'c'
     override_meta:
@@ -26,6 +27,7 @@ executors:
   - name: doc_indexer
     uses: 'jinahub://LMDBStorage'
     override_with:
+      map_size: 10485760000  # in bytes, 10 GB
       default_traversal_paths:
         - 'r'
     override_meta:
