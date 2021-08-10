@@ -3,7 +3,8 @@ import os
 import click
 
 from jina import Document, Flow
-from executors import SentenceSegmenter, Ranker, RemoveTags
+from executors import IndexSentenceSegmenter, QuerySentenceSegmenter, RemoveTags, DebugExecutor
+
 
 def config():
     os.environ['JINA_DUMP_PATH_DOC'] = './workspace/dump_doc'
