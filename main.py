@@ -4,7 +4,7 @@ import os
 import click
 
 from jina import Document, Flow
-from executors import IndexSentenceSegmenter, QuerySentenceSegmenter, RemoveTags, DebugExecutor
+from executors import IndexSentenceSegmenter, QuerySentenceSegmenter, RemoveTags, AggregateRanker
 from executors import DebugExecutor
 
 
@@ -98,12 +98,13 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_vec_indexer',
-            uses='jinahub://NumpySearcher',
-            # uses='jinahub://FaissSearcher',
+            # uses='jinahub://NumpySearcher',
+            uses='jinahub://FaissSearcher',
             uses_with={
-                # 'index_key': 'Flat',
-                # 'requires_training': False,
-                # 'metric': 'l2',
+                'index_key': 'Flat',
+                'requires_training': False,
+                'metric': 'l2',
+                'is_distance': True,
                 # 'normalize': True,
                 'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
                 'default_traversal_paths': [
@@ -127,9 +128,10 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='ranker',
-            uses='jinahub://MinRanker',
+            uses='AggregateRanker',
             uses_with={
-                'metric': 'cosine',
+                'metric': 'l2',
+                'is_distance': True,
                 'default_traversal_paths': [
                     'r',
                 ],
@@ -187,6 +189,7 @@ def query():
             on='/search',
             inputs=Document(
                 text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
+                # text = '海口市美兰区人民检察院与被申请人陈东旭强制医疗一案刑事决定书'
             ),
             parameters={'top_k': 3, 'key_words': '危险驾驶罪'},
             return_results=True,
@@ -195,7 +198,8 @@ def query():
     for doc in results[0].docs:
         print(f'Query: {doc.id}, {doc.text}')
         for i, m in enumerate(doc.matches):
-            print(f'+- [{i}] ({m.scores["cosine"].value}) {m.id}, {m.text}')
+            print(f'+- [{i}] ({m.scores["l2"].value}) {m.id}, {m.text[:50]}...')
+            input('Enter to continue...')
 
 
 def update():
