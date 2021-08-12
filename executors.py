@@ -144,12 +144,12 @@ class AggregateRanker(Executor):
         traversal_paths = parameters.get(
             'traversal_paths', self.default_traversal_paths
         )
-       
+
         for doc in docs.traverse_flat(traversal_paths):
             matches_of_chunks = []
             for chunk in doc.chunks:
                 matches_of_chunks.extend(chunk.matches)
-            
+
             groups = groupby(
                 sorted(matches_of_chunks, key=lambda d: d.parent_id),
                 lambda d: d.parent_id,
@@ -167,17 +167,21 @@ class AggregateRanker(Executor):
                     if m.modality == 'title':
                         m.scores[self.metric].value *= 1.25
 
-                chunk_match_list.sort(key=lambda m: self.distance_mult * m.scores[self.metric].value)
+                chunk_match_list.sort(
+                    key=lambda m: self.distance_mult * m.scores[self.metric].value
+                )
                 match = chunk_match_list[0]
                 match.id = chunk_match_list[0].parent_id
                 doc.matches.append(match)
-            
-            doc.matches.sort(key=lambda d: self.distance_mult * d.scores[self.metric].value)
+
+            doc.matches.sort(
+                key=lambda d: self.distance_mult * d.scores[self.metric].value
+            )
             doc.matches = doc.matches[:top_k]
-            
+
             # trim `chunks` and `tags`
             doc.pop('chunks', 'tags')
-            
+
 
 class RemoveTags(Executor):
     @requests
@@ -188,7 +192,7 @@ class RemoveTags(Executor):
 
 
 class DebugExecutor(Executor):
-    def __init__(self, metric: str= 'l2', *args, **kwargs):
+    def __init__(self, metric: str = 'l2', *args, **kwargs):
         super().__init__(**kwargs)
         from jina.logging.logger import JinaLogger
 
@@ -205,5 +209,9 @@ class DebugExecutor(Executor):
                     assert c.embedding.shape == (768,)
                 else:
                     print(f'\t emb shape: {c.embedding.shape}')
-                print(f'modality: {c.matches[0].parent_id} - {c.matches[0].modality} - {c.matches[0].scores[self.metric].value}')
-                print(f'[{i} - {j}]: {len(c.matches)} - [{" ".join([str(m.scores[self.metric].value) for m in c.matches])}]')
+                print(
+                    f'modality: {c.matches[0].parent_id} - {c.matches[0].modality} - {c.matches[0].scores[self.metric].value}'
+                )
+                print(
+                    f'[{i} - {j}]: {len(c.matches)} - [{" ".join([str(m.scores[self.metric].value) for m in c.matches])}]'
+                )
