@@ -108,9 +108,9 @@ def create_query_flow():
             uses_with={
                 'index_key': 'Flat',
                 'requires_training': False,
-                'metric': 'l2',
-                'is_distance': True,
-                # 'normalize': True,
+                'metric': 'inner_product',
+                'normalize': True, # i.e., cosine metric
+                'is_distance': False,
                 'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
                 'default_traversal_paths': [
                     'c',
@@ -135,8 +135,8 @@ def create_query_flow():
             name='ranker',
             uses='AggregateRanker',
             uses_with={
-                'metric': 'l2',
-                'is_distance': True,
+                'metric': 'inner_product',
+                'is_distance': False,
                 'default_traversal_paths': [
                     'r',
                 ],
@@ -203,7 +203,7 @@ def query():
     for doc in results[0].docs:
         print(f'Query: {doc.id}, {doc.text}')
         for i, m in enumerate(doc.matches):
-            print(f'+- [{i}] ({m.scores["l2"].value}) {m.id}, {m.text[:50]}...')
+            print(f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}, {m.text[:50]}...')
             input('Enter to continue...')
 
 
