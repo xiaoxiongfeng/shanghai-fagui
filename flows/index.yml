@@ -1,36 +1,36 @@
 jtype: Flow
 version: '1'
-with:
-  show_progress: True
 executors:
   - name: segmenter
-    uses: SentenceSegmenter
+    uses: IndexSentenceSegmenter
   - name: encoder
     uses: 'jinahub://TransformerTFTextEncoder'
     parallel: 3
-    override_with:
+    uses_with:
       pretrained_model_name_or_path: 'hfl/chinese-legal-electra-small-generator'
-      default_batch_size: 16
+      default_batch_size: 32
+      on_gpu: false
+      max_length: 256
       default_traversal_paths:
         - 'c'
   - name: chunk_indexer
-    uses: 'jinahub://LMDBStorage'
-    override_with:
-      map_size: 10485760000  # in bytes, 10 GB
+    uses: 'jinahub://PostgreSQLStorage'
+    uses_with:
+      table: 'chunk_indexer_legal_electra_table'
       default_traversal_paths:
         - 'c'
-    override_meta:
+    uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
   - name: remover
     uses: RemoveTags
     needs: gateway
   - name: doc_indexer
-    uses: 'jinahub://LMDBStorage'
-    override_with:
-      map_size: 10485760000  # in bytes, 10 GB
+    uses: 'jinahub://PostgreSQLStorage'
+    uses_with:
+      table: 'doc_indexer_table'
       default_traversal_paths:
         - 'r'
-    override_meta:
+    uses_metas:
       workspace: ${JINA_WORKSPACE_DOC}
   - name: joiner
     needs: [chunk_indexer, doc_indexer]

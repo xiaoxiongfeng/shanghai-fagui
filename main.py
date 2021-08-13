@@ -20,7 +20,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='toy-data/case_parse_1234.json'):
+def load_data(data_fn='toy-data/case_parse_10.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -40,7 +40,7 @@ def load_data(data_fn='toy-data/case_parse_1234.json'):
 def create_index_flow():
     flow = (
         Flow()
-        .add(uses=IndexSentenceSegmenter, name="segmenter")
+        .add(uses=IndexSentenceSegmenter, name='segmenter')
         .add(
             name='encoder',
             # uses='jinahub://TransformerTorchEncoder',

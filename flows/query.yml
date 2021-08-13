@@ -1,41 +1,53 @@
 jtype: Flow
 version: '1'
 with:
-  port_expose: 45678
+  port_expose: 45679
   no_debug_endpoints: True
   no_crud_endpoints: True
 executors:
   - name: segmenter
-    uses: SentenceSegmenter
+    uses: QuerySentenceSegmenter
   - name: encoder
     uses: 'jinahub://TransformerTFTextEncoder'
     parallel: 1
     override_with:
       pretrained_model_name_or_path: 'hfl/chinese-legal-electra-small-generator'
-      default_batch_size: 16
+      on_gpu: false
+      default_batch_size: 32
+      max_length: 256
       default_traversal_paths:
         - 'c'
   - name: chunk_vec_indexer
-    uses: 'jinahub://NumpySearcher'
-    override_with:
+    uses: 'jinahub://FaissSearcher'
+    uses_with:
+      index_key: 'Flat'
+      requires_training: false
+      metric: 'inner_product'
+      normalize: true
+      is_distance: false
       dump_path: ${JINA_DUMP_PATH_CHUNK}
       default_traversal_paths: ['c', ]
-    override_metas:
+    uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
   - name: chunk_kv_indexer
-    uses: 'jinahub://FileSearcher'
-    override_with:
+    uses: 'jinahub://LMDBStorage'
+    uses_with:
       dump_path: ${JINA_DUMP_PATH_CHUNK}
-      default_traversal_paths: ['m', ]
-    override_metas:
+      default_traversal_paths: ['cm', ]
+    uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
   - name: ranker
-    uses: Ranker
+    uses: AggregateRanker
+    uses_with:
+      metric: 'inner_product'
+      is_distance: false
+      default_traversal_paths:
+        - 'r'
   - name: doc_kv_indexer
-    uses: 'jinahub://FileSearcher'
-    override_with:
+    uses: 'jinahub://LMDBStorage'
+    uses_with:
       dump_path: ${JINA_DUMP_PATH_DOC}
       default_traversal_paths: ['m', ]
-    override_metas:
+    uses_metas:
       workspace: ${JINA_WORKSPACE_DOC}
 
