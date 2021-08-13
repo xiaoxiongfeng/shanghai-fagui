@@ -53,12 +53,10 @@ def create_index_flow():
                 # 'num_threads': 8,
                 # 'max_length': 512,
                 # 'default_batch_size': 16,
-                
                 'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
                 'on_gpu': False,
                 'default_batch_size': 32,
                 'max_length': 256,
-                
                 'default_traversal_paths': ['c'],
             },
         )
@@ -103,13 +101,10 @@ def create_query_flow():
                 # 'num_threads': 8,
                 # 'max_length': 512,
                 # 'default_batch_size': 16,
-                
                 'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
                 'on_gpu': False,
                 'max_length': 256,
                 'default_batch_size': 32,
-                
-                
                 'default_traversal_paths': ['c'],
             },
         )
@@ -117,12 +112,12 @@ def create_query_flow():
         .add(
             name='chunk_vec_indexer',
             uses='jinahub://FaissSearcher',
-            timeout_ready = -1,
+            timeout_ready=-1,
             uses_with={
                 'index_key': 'HNSW32',
                 'requires_training': False,
                 'metric': 'inner_product',
-                'normalize': True, # i.e., cosine metric
+                'normalize': True,  # i.e., cosine metric
                 'is_distance': False,
                 'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
                 'default_traversal_paths': [
@@ -216,7 +211,9 @@ def query():
     for doc in results[0].docs:
         print(f'Query: {doc.id}, {doc.text}')
         for i, m in enumerate(doc.matches):
-            print(f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}, {m.text[:50]}...')
+            print(
+                f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}, {m.text[:50]}...'
+            )
             input('Enter to continue...')
 
 
@@ -279,8 +276,11 @@ def query_restful(port_expose='47678'):
         description='This is a demo at 擎盾科技',
         no_debug_endpoints=True,
     )
-    f_query.expose_endpoint('/search', summary='Search the docs',
-                            description='example:{"data": [{"text": "信用卡纠纷申请执行人中国邮政储蓄银行股份有限公司天津武清区支行与被执行人程红玉信用卡纠纷一案"}]}')
+    f_query.expose_endpoint(
+        '/search',
+        summary='Search the docs',
+        description='example: {"data": [{"text": "信用卡纠纷申请执行人中国邮政储蓄银行股份有限公司天津武清区支行与被执行人程红玉信用卡纠纷一案"}], "parameters": {"top_k": 10}}',
+    )
     with f_query:
         f_query.block()
 
