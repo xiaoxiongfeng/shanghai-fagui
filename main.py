@@ -117,6 +117,7 @@ def create_query_flow():
         .add(
             name='chunk_vec_indexer',
             uses='jinahub://FaissSearcher',
+            timeout_ready = -1,
             uses_with={
                 'index_key': 'HNSW32',
                 'requires_training': False,
