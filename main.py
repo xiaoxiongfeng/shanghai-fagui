@@ -1,4 +1,3 @@
-from functools import partial
 import json
 import os
 import click
@@ -106,7 +105,7 @@ def create_query_flow():
             # uses='jinahub://NumpySearcher',
             uses='jinahub://FaissSearcher',
             uses_with={
-                'index_key': 'Flat',
+                'index_key': 'HNSW32',
                 'requires_training': False,
                 'metric': 'inner_product',
                 'normalize': True, # i.e., cosine metric
