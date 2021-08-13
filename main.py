@@ -116,7 +116,6 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_vec_indexer',
-            # uses='jinahub://NumpySearcher',
             uses='jinahub://FaissSearcher',
             uses_with={
                 'index_key': 'HNSW32',

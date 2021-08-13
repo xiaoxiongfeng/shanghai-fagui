@@ -10,7 +10,7 @@ executors:
   - name: encoder
     uses: 'jinahub://TransformerTFTextEncoder'
     parallel: 1
-    override_with:
+    uses_with:
       pretrained_model_name_or_path: 'hfl/chinese-legal-electra-small-generator'
       on_gpu: false
       default_batch_size: 32

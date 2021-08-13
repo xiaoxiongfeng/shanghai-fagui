@@ -68,7 +68,7 @@ def query():
     for doc in results[0].docs:
         print(f'query: {doc.id}, {doc.text}')
         for m in doc.matches:
-            print(f'+- {m.id}, {m.text}')
+            print(f'+- {m.id}, {m.text[:50]}...')
 
 
 def query_restful():
