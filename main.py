@@ -278,6 +278,8 @@ def query_restful(port_expose='47678'):
         description='This is a demo at 擎盾科技',
         no_debug_endpoints=True,
     )
+    f_query.expose_endpoint('/search', summary='Search the docs',
+                            description='example:{"data": [{"text": "信用卡纠纷申请执行人中国邮政储蓄银行股份有限公司天津武清区支行与被执行人程红玉信用卡纠纷一案"}]}')
     with f_query:
         f_query.block()
 
