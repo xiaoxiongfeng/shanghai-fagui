@@ -20,7 +20,7 @@ executors:
   - name: chunk_vec_indexer
     uses: 'jinahub://FaissSearcher'
     uses_with:
-      index_key: 'Flat'
+      index_key: 'HNSW32'
       requires_training: false
       metric: 'inner_product'
       normalize: true
