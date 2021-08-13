@@ -20,7 +20,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='toy-data/case_parse_v1.json'):
+def load_data(data_fn='toy-data/case_parse_1234.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -43,16 +43,22 @@ def create_index_flow():
         .add(uses=IndexSentenceSegmenter, name="segmenter")
         .add(
             name='encoder',
-            uses='jinahub://TransformerTorchEncoder',
+            # uses='jinahub://TransformerTorchEncoder',
+            uses='jinahub://TransformerTFTextEncoder',
             parallel=8,
-            on_gpu='False',
             uses_with={
-                'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                'default_batch_size': 64,
-                'device': 'cpu',
-                'num_threads': 8,
-                'max_length': 512,
+                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
+                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
+                # 'device': 'cpu',
+                # 'num_threads': 8,
+                # 'max_length': 512,
+                # 'default_batch_size': 16,
+                
+                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+                'on_gpu': False,
+                'default_batch_size': 32,
+                'max_length': 256,
+                
                 'default_traversal_paths': ['c'],
             },
         )
@@ -60,7 +66,7 @@ def create_index_flow():
             name='chunk_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_table',
+                'table': 'chunk_indexer_legal_electra_table',
                 'default_traversal_paths': ['c'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -87,15 +93,23 @@ def create_query_flow():
         .add(name='segmenter', uses=QuerySentenceSegmenter)
         .add(
             name='encoder',
-            uses='jinahub://TransformerTorchEncoder',
+            # uses='jinahub://TransformerTorchEncoder',
+            uses='jinahub://TransformerTFTextEncoder',
             parallel=1,
             uses_with={
-                'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                'default_batch_size': 16,
-                'device': 'cpu',
-                'num_threads': 8,
-                'max_length': 512,
+                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
+                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
+                # 'device': 'cpu',
+                # 'num_threads': 8,
+                # 'max_length': 512,
+                # 'default_batch_size': 16,
+                
+                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+                'on_gpu': False,
+                'max_length': 256,
+                'default_batch_size': 32,
+                
+                
                 'default_traversal_paths': ['c'],
             },
         )
