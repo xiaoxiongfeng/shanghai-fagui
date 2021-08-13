@@ -1,10 +1,14 @@
-from functools import partial
 import json
 import os
 import click
 
 from jina import Document, Flow
-from executors import IndexSentenceSegmenter, QuerySentenceSegmenter, RemoveTags, DebugExecutor
+from executors import (
+    IndexSentenceSegmenter,
+    QuerySentenceSegmenter,
+    RemoveTags,
+    AggregateRanker,
+)
 from executors import DebugExecutor
 
 
@@ -16,7 +20,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='toy-data/case_parse_v1.json'):
+def load_data(data_fn='toy-data/case_parse_10.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -36,19 +40,25 @@ def load_data(data_fn='toy-data/case_parse_v1.json'):
 def create_index_flow():
     flow = (
         Flow()
-        .add(uses=IndexSentenceSegmenter, name="segmenter")
+        .add(uses=IndexSentenceSegmenter, name='segmenter')
         .add(
             name='encoder',
-            uses='jinahub://TransformerTorchEncoder',
+            # uses='jinahub://TransformerTorchEncoder',
+            uses='jinahub://TransformerTFTextEncoder',
             parallel=8,
-            on_gpu='False',
             uses_with={
-                'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                'default_batch_size': 64,
-                'device': 'cpu',
-                'num_threads': 8,
-                'max_length': 512,
+                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
+                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
+                # 'device': 'cpu',
+                # 'num_threads': 8,
+                # 'max_length': 512,
+                # 'default_batch_size': 16,
+                
+                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+                'on_gpu': False,
+                'default_batch_size': 32,
+                'max_length': 256,
+                
                 'default_traversal_paths': ['c'],
             },
         )
@@ -56,7 +66,7 @@ def create_index_flow():
             name='chunk_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_table',
+                'table': 'chunk_indexer_legal_electra_table',
                 'default_traversal_paths': ['c'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -83,28 +93,36 @@ def create_query_flow():
         .add(name='segmenter', uses=QuerySentenceSegmenter)
         .add(
             name='encoder',
-            uses='jinahub://TransformerTorchEncoder',
+            # uses='jinahub://TransformerTorchEncoder',
+            uses='jinahub://TransformerTFTextEncoder',
             parallel=1,
             uses_with={
-                'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                'default_batch_size': 16,
-                'device': 'cpu',
-                'num_threads': 8,
-                'max_length': 512,
+                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
+                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
+                # 'device': 'cpu',
+                # 'num_threads': 8,
+                # 'max_length': 512,
+                # 'default_batch_size': 16,
+                
+                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+                'on_gpu': False,
+                'max_length': 256,
+                'default_batch_size': 32,
+                
+                
                 'default_traversal_paths': ['c'],
             },
         )
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_vec_indexer',
-            uses='jinahub://NumpySearcher',
-            # uses='jinahub://FaissSearcher',
+            uses='jinahub://FaissSearcher',
             uses_with={
-                # 'index_key': 'Flat',
-                # 'requires_training': False,
-                # 'metric': 'l2',
-                # 'normalize': True,
+                'index_key': 'HNSW32',
+                'requires_training': False,
+                'metric': 'inner_product',
+                'normalize': True, # i.e., cosine metric
+                'is_distance': False,
                 'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
                 'default_traversal_paths': [
                     'c',
@@ -127,9 +145,10 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='ranker',
-            uses='jinahub://MinRanker',
+            uses='AggregateRanker',
             uses_with={
-                'metric': 'cosine',
+                'metric': 'inner_product',
+                'is_distance': False,
                 'default_traversal_paths': [
                     'r',
                 ],
@@ -187,6 +206,7 @@ def query():
             on='/search',
             inputs=Document(
                 text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
+                # text = '海口市美兰区人民检察院与被申请人陈东旭强制医疗一案刑事决定书'
             ),
             parameters={'top_k': 3, 'key_words': '危险驾驶罪'},
             return_results=True,
@@ -195,7 +215,8 @@ def query():
     for doc in results[0].docs:
         print(f'Query: {doc.id}, {doc.text}')
         for i, m in enumerate(doc.matches):
-            print(f'+- [{i}] ({m.scores["cosine"].value}) {m.id}, {m.text}')
+            print(f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}, {m.text[:50]}...')
+            input('Enter to continue...')
 
 
 def update():
