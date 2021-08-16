@@ -69,7 +69,7 @@ def create_index_flow():
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
         )
-        .add(name='remover', uses=RemoveTags, needs='gateway')
+        # .add(name='remover', uses=RemoveTags, needs='gateway')
         .add(
             name='doc_indexer',
             uses='jinahub://PostgreSQLStorage',
@@ -78,6 +78,7 @@ def create_index_flow():
                 'default_traversal_paths': ['r'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
+            needs='gateway',
         )
         .add(name='joiner', needs=['chunk_indexer', 'doc_indexer'])
     )
@@ -131,12 +132,10 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_kv_indexer',
-            uses='jinahub://LMDBStorage',
+            uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
-                'default_traversal_paths': [
-                    'cm',
-                ],
+                'table': 'chunk_indexer_legal_electra_table',
+                'default_traversal_paths': ['cm'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
         )
@@ -154,12 +153,10 @@ def create_query_flow():
         )
         .add(
             name='doc_kv_indexer',
-            uses='jinahub://LMDBStorage',
+            uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'dump_path': os.environ["JINA_DUMP_PATH_DOC"],
-                'default_traversal_paths': [
-                    'm',
-                ],
+                'table': 'doc_indexer_table',
+                'default_traversal_paths': ['m'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
         )
@@ -188,12 +185,12 @@ def index():
             },
         )
 
-        print(f'==> STEP [3/3]: dumping doc data ...')
-        f_index.post(
-            on='/dump',
-            target_peapod='doc_indexer',
-            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        )
+        # print(f'==> STEP [3/3]: dumping doc data ...')
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='doc_indexer',
+        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+        # )
 
 
 def query():

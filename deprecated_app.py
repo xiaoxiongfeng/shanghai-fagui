@@ -46,11 +46,11 @@ def index():
                 'shards': 1,
             },
         )
-        f_index.post(
-            on='/dump',
-            target_peapod='doc_indexer',
-            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        )
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='doc_indexer',
+        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+        # )
 
 
 def query():

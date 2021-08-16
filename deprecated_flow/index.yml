@@ -21,9 +21,6 @@ executors:
         - 'c'
     uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
-  - name: remover
-    uses: RemoveTags
-    needs: gateway
   - name: doc_indexer
     uses: 'jinahub://PostgreSQLStorage'
     uses_with:
@@ -32,5 +29,6 @@ executors:
         - 'r'
     uses_metas:
       workspace: ${JINA_WORKSPACE_DOC}
+    needs: gateway
   - name: joiner
     needs: [chunk_indexer, doc_indexer]
