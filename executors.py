@@ -177,7 +177,7 @@ class AggregateRanker(Executor):
                     o = NamedScore(
                             op_name=f'{m.location[0]} {m.location[1]}' if m.location else '',
                             value=m.scores[self.metric].value,
-                            ref_id=m.id,
+                            ref_id=m.parent_id,
                             description=f'{m.modality}',
                         )
                     operands.append(o)
