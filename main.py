@@ -10,7 +10,7 @@ from executors import (
     AggregateRanker,
 )
 from executors import DebugExecutor
-
+from faiss_searcher import FaissSearcher
 
 def config():
     os.environ["JINA_WORKSPACE"] = "./workspace"
@@ -111,11 +111,13 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_vec_indexer',
-            uses='jinahub://FaissSearcher',
+            # uses='jinahub://FaissSearcher',
+            uses=FaissSearcher,
             timeout_ready=-1,
             uses_with={
-                'index_key': 'HNSW32',
-                'requires_training': False,
+                'index_key': 'IVF10,PQ4',
+                'requires_training': True,
+                'prefech_size': 10000,
                 'metric': 'inner_product',
                 'normalize': True,  # i.e., cosine metric
                 'is_distance': False,

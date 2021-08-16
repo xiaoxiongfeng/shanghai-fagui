@@ -59,8 +59,9 @@ def query():
         results = f_query.post(
             on='/search',
             inputs=Document(
-                text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
+                # text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
                 # text = '海口市美兰区人民检察院与被申请人陈东旭强制医疗一案刑事决定书'
+                text='我发生了交通事故，属于工伤，应该如何处理！'
             ),
             parameters={'top_k': 3, 'key_words': '危险驾驶罪'},
             return_results=True,
@@ -68,7 +69,7 @@ def query():
     for doc in results[0].docs:
         print(f'query: {doc.id}, {doc.text}')
         for m in doc.matches:
-            print(f'+- {m.id}, {m.text[:50]}...')
+            print(f'+- {m.id}, {m.modality} {m.text[:50]}...')
 
 
 def query_restful():
