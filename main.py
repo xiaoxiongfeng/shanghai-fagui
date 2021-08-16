@@ -232,12 +232,12 @@ def update():
             },
         )
 
-        print(f'==> STEP [3/3]: dumping doc data ...')
-        f_index.post(
-            on='/dump',
-            target_peapod='doc_indexer',
-            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        )
+        # print(f'==> STEP [3/3]: dumping doc data ...')
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='doc_indexer',
+        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+        # )
 
 
 def delete():
@@ -256,12 +256,12 @@ def delete():
             },
         )
 
-        print(f'==> STEP [3/3]: dumping doc data ...')
-        f_index.post(
-            on='/dump',
-            target_peapod='doc_indexer',
-            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        )
+        # print(f'==> STEP [3/3]: dumping doc data ...')
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='doc_indexer',
+        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+        # )
 
 
 def query_restful(port_expose='47678'):
