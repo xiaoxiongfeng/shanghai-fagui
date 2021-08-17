@@ -181,7 +181,7 @@ class AggregateRanker(Executor):
                             op_name=f'{m.location[0]} {m.location[1]}' if m.location else '',
                             value=m.scores[self.metric].value,
                             ref_id=m.parent_id,
-                            description=f'{m.modality}',
+                            description=f'{m.text} ',
                         )
                     operands.append(o)
 

@@ -113,8 +113,8 @@ def create_query_flow():
             uses='jinahub://FaissSearcher',
             timeout_ready=-1,
             uses_with={
-                'index_key': 'IVF10,PQ4',
-                'requires_training': True,
+                'index_key': 'HNSW32',
+                'requires_training': False,
                 'prefech_size': 10000,
                 'metric': 'inner_product',
                 'normalize': True,  # i.e., cosine metric
