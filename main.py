@@ -6,11 +6,9 @@ from jina import Document, Flow
 from executors import (
     IndexSentenceSegmenter,
     QuerySentenceSegmenter,
-    RemoveTags,
     AggregateRanker,
 )
 from executors import DebugExecutor
-from faiss_searcher import FaissSearcher
 
 def config():
     os.environ["JINA_WORKSPACE"] = "./workspace"
@@ -112,8 +110,7 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_vec_indexer',
-            # uses='jinahub://FaissSearcher',
-            uses=FaissSearcher,
+            uses='jinahub://FaissSearcher',
             timeout_ready=-1,
             uses_with={
                 'index_key': 'IVF10,PQ4',
