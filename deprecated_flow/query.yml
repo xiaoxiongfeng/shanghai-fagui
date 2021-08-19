@@ -31,10 +31,11 @@ executors:
     uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
   - name: chunk_kv_indexer
-    uses: 'jinahub://LMDBStorage'
+    uses: 'jinahub://PostgreSQLStorage'
     uses_with:
-      dump_path: ${JINA_DUMP_PATH_CHUNK}
-      default_traversal_paths: ['cm', ]
+      table: 'chunk_indexer_legal_electra_table'
+      default_traversal_paths:
+        - 'cm'
     uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK}
   - name: ranker
@@ -45,10 +46,12 @@ executors:
       default_traversal_paths:
         - 'r'
   - name: doc_kv_indexer
-    uses: 'jinahub://LMDBStorage'
+    uses: 'jinahub://PostgreSQLStorage'
     uses_with:
-      dump_path: ${JINA_DUMP_PATH_DOC}
-      default_traversal_paths: ['m', ]
+      table: 'doc_indexer_table'
+      default_traversal_paths:
+        - 'm'
     uses_metas:
       workspace: ${JINA_WORKSPACE_DOC}
+    
 

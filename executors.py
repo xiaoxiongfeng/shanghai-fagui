@@ -1,7 +1,11 @@
+
+
+
 from typing import List, Dict
 from itertools import groupby
 
 from jina import Document, DocumentArray, Executor, requests
+from jina.types.score import NamedScore
 import re
 
 from zhon.hanzi import punctuation as chinese_punctuation  # 中文标点符号
@@ -170,8 +174,21 @@ class AggregateRanker(Executor):
                 chunk_match_list.sort(
                     key=lambda m: self.distance_mult * m.scores[self.metric].value
                 )
+
+                operands = []
+                for m in chunk_match_list:
+                    o = NamedScore(
+                            op_name=f'{m.location[0]} {m.location[1]}' if m.location else '',
+                            value=m.scores[self.metric].value,
+                            ref_id=m.parent_id,
+                            description=f'{m.text} ',
+                        )
+                    operands.append(o)
+
+                
                 match = chunk_match_list[0]
                 match.id = chunk_match_list[0].parent_id
+                match.scores[self.metric].set_attrs(operands=operands)
                 doc.matches.append(match)
 
             doc.matches.sort(
