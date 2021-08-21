@@ -12,8 +12,8 @@ from executors import DebugExecutor
 
 def config():
     os.environ["JINA_WORKSPACE"] = "./workspace"
-    os.environ["JINA_DUMP_PATH_DOC"] = "./workspace/dump_doc"
-    os.environ["JINA_DUMP_PATH_CHUNK"] = "./workspace/dump_chunk"
+    os.environ["JINA_DUMP_PATH_DOC"] = "/data/xxf/jina-workspace/workspace/dump_doc"
+    os.environ["JINA_DUMP_PATH_CHUNK"] = "/data/xxf/jina-workspace/workspace/dump_chunk"
     os.environ["JINA_WORKSPACE_DOC"] = "./workspace/ws_doc"
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
@@ -169,8 +169,8 @@ def index():
     f_index = create_index_flow()
     # f_index.plot('.github/index.svg')
     with f_index:
-        print(f'==> STEP [1/3]: indexing data ...')
-        f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
+        #print(f'==> STEP [1/3]: indexing data ...')
+        #f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
 
         print(f'==> STEP [2/3]: dumping chunk data ...')
         f_index.post(
@@ -261,7 +261,7 @@ def delete():
         # )
 
 
-def query_restful(port_expose='47678'):
+def query_restful(port_expose='45678'):
     f_query = create_query_flow()
     f_query._update_args(
         None,
