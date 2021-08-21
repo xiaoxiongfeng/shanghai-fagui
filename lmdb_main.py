@@ -18,7 +18,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='/data/xxf/case_parse_v1.json'):
+def load_data(data_fn='./toy-data/case_parse_1234.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -60,9 +60,10 @@ def create_index_flow():
         )
         .add(
             name='chunk_indexer',
-            uses='jinahub://PostgreSQLStorage',
+            #uses='jinahub://PostgreSQLStorage',
+            uses='jinahub://LMDBStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table_pick2',
+                #'table': 'chunk_indexer_legal_electra_table_pick2',
                 'default_traversal_paths': ['c'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -70,9 +71,10 @@ def create_index_flow():
         # .add(name='remover', uses=RemoveTags, needs='gateway')
         .add(
             name='doc_indexer',
-            uses='jinahub://PostgreSQLStorage',
+            uses='jinahub://LMDBStorage',
+            #uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table_pick2',
+             #   'table': 'doc_indexer_table_pick2',
                 'default_traversal_paths': ['r'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
@@ -129,9 +131,10 @@ def create_query_flow():
         # .add(name='debug', uses=DebugExecutor)
         .add(
             name='chunk_kv_indexer',
-            uses='jinahub://PostgreSQLStorage',
+            #uses='jinahub://PostgreSQLStorage',
+            uses='jinahub://LMDBStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table_pick2',
+             #   'table': 'chunk_indexer_legal_electra_table_pick2',
                 'default_traversal_paths': ['cm'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -150,9 +153,10 @@ def create_query_flow():
         )
         .add(
             name='doc_kv_indexer',
-            uses='jinahub://PostgreSQLStorage',
+            uses='jinahub://LMDBStorage',
+            #uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table_pick2',
+             #   'table': 'doc_indexer_table_pick2',
                 'default_traversal_paths': ['m'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
