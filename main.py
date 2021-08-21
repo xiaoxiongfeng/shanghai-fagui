@@ -62,7 +62,7 @@ def create_index_flow():
             name='chunk_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table',
+                'table': 'chunk_indexer_legal_electra_table_pick2',
                 'default_traversal_paths': ['c'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -72,7 +72,7 @@ def create_index_flow():
             name='doc_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table',
+                'table': 'doc_indexer_table_pick2',
                 'default_traversal_paths': ['r'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
@@ -131,7 +131,7 @@ def create_query_flow():
             name='chunk_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table',
+                'table': 'chunk_indexer_legal_electra_table_pick2',
                 'default_traversal_paths': ['cm'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -152,7 +152,7 @@ def create_query_flow():
             name='doc_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table',
+                'table': 'doc_indexer_table_pick2',
                 'default_traversal_paths': ['m'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},

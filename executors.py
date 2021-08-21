@@ -41,20 +41,18 @@ class IndexSentenceSegmenter(Executor):
             try:
                 # content chunk
                 for s_idx, s in enumerate(doc.text.split('\n')):
-                    s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
-                    for ss_idx, ss in enumerate(s_list):
-                        ss = ss.strip()
-                        if not ss:
-                            continue
-                        if len(ss) > 65:
-                            ss = ss[:64]
-                        _chunk = Document(
-                            text=ss,
+                    s = s.strip()
+                    if not s:
+                        continue
+                    if len(s) > 65:
+                        s = s[:64]
+                    _chunk = Document(
+                            text=s,
                             parent_id=doc.id,
-                            location=[s_idx, ss_idx],
+                            location=[s_idx],
                             modality='content',
                         )
-                        doc.chunks.append(_chunk)
+                    doc.chunks.append(_chunk)
 
                 # paras chunk
                 if doc.tags['_source']['paras']:
@@ -97,6 +95,11 @@ class IndexSentenceSegmenter(Executor):
                             text=cause, parent_id=doc.id, modality='causes'
                         )
                         doc.chunks.append(_chunk)
+
+
+
+
+
             except KeyError as e:
                 continue
 
@@ -108,15 +111,15 @@ class QuerySentenceSegmenter(Executor):
     def segment(self, docs: DocumentArray, **kwargs):
         for doc in docs:
             for s_idx, s in enumerate(doc.text.split('\n')):
-                s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
-                for ss_idx, ss in enumerate(s_list):
-                    ss = ss.strip()
-                    if not ss:
+                #s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
+                #for ss_idx, ss in enumerate(s_list):
+                    s = s.strip()
+                    if not s:
                         continue
-                    if len(ss) > 65:
-                        ss = ss[:64]
+                    if len(s) > 65:
+                        s = s[:64]
                     _chunk = Document(
-                        text=ss, parent_id=doc.id, location=[s_idx, ss_idx]
+                        text=s + '.....................', parent_id=doc.id, location=[s_idx]
                     )
                     doc.chunks.append(_chunk)
         return DocumentArray([d for d in docs if d.chunks])
@@ -163,9 +166,9 @@ class AggregateRanker(Executor):
 
                 for m in chunk_match_list:
                     if m.modality == 'content':
-                        m.scores[self.metric].value *= 0.9
+                        m.scores[self.metric].value *= 0.7
                     if m.modality == 'causes':
-                        m.scores[self.metric].value *= 1.5
+                        m.scores[self.metric].value *= 1.2
                     if m.modality == 'paras':
                         m.scores[self.metric].value *= 1.1
                     if m.modality == 'title':
@@ -178,7 +181,7 @@ class AggregateRanker(Executor):
                 operands = []
                 for m in chunk_match_list:
                     o = NamedScore(
-                            op_name=f'{m.location[0]} {m.location[1]}' if m.location else '',
+                            op_name=f'{m.location[0]}' if m.location else '',
                             value=m.scores[self.metric].value,
                             ref_id=m.parent_id,
                             description=f'{m.text} ',
