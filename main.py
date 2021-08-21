@@ -169,8 +169,8 @@ def index():
     f_index = create_index_flow()
     # f_index.plot('.github/index.svg')
     with f_index:
-        #print(f'==> STEP [1/3]: indexing data ...')
-        #f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
+        print(f'==> STEP [1/3]: indexing data ...')
+        f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
 
         print(f'==> STEP [2/3]: dumping chunk data ...')
         f_index.post(
