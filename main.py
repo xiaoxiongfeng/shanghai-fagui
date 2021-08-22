@@ -18,7 +18,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='/data/xxf/case_parse_v1.json'):
+def load_data(data_fn='./toy-data/case_parse_1234.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -43,7 +43,7 @@ def create_index_flow():
             name='encoder',
             # uses='jinahub://TransformerTorchEncoder',
             uses='jinahub://TransformerTFTextEncoder',
-            parallel=8,
+            parallel=32,
             uses_with={
                 # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
                 # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
@@ -53,7 +53,7 @@ def create_index_flow():
                 # 'default_batch_size': 16,
                 'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
                 'on_gpu': False,
-                'default_batch_size': 32,
+                'default_batch_size': 128,
                 'max_length': 256,
                 'default_traversal_paths': ['c'],
             },
@@ -62,7 +62,7 @@ def create_index_flow():
             name='chunk_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table_pick2',
+                'table': 'chunk_indexer_legal_electra_table_court3',
                 'default_traversal_paths': ['c'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -72,7 +72,7 @@ def create_index_flow():
             name='doc_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table_pick2',
+                'table': 'doc_indexer_table_court3',
                 'default_traversal_paths': ['r'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
@@ -131,7 +131,7 @@ def create_query_flow():
             name='chunk_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'chunk_indexer_legal_electra_table_pick2',
+                'table': 'chunk_indexer_legal_electra_table_court3',
                 'default_traversal_paths': ['cm'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
@@ -152,7 +152,7 @@ def create_query_flow():
             name='doc_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
-                'table': 'doc_indexer_table_pick2',
+                'table': 'doc_indexer_table_court3',
                 'default_traversal_paths': ['m'],
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
@@ -182,12 +182,12 @@ def index():
             },
         )
 
-        # print(f'==> STEP [3/3]: dumping doc data ...')
-        # f_index.post(
-        #     on='/dump',
-        #     target_peapod='doc_indexer',
-        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        # )
+        print(f'==> STEP [3/3]: dumping doc data ...')
+        f_index.post(
+            on='/dump',
+            target_peapod='doc_indexer',
+            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+            )
 
 
 def query():
@@ -261,7 +261,7 @@ def delete():
         # )
 
 
-def query_restful(port_expose='45678'):
+def query_restful(port_expose='47678'):
     f_query = create_query_flow()
     f_query._update_args(
         None,

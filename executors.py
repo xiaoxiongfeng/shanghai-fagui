@@ -40,19 +40,19 @@ class IndexSentenceSegmenter(Executor):
 
             try:
                 # content chunk
-                for s_idx, s in enumerate(doc.text.split('\n')):
-                    s = s.strip()
-                    if not s:
-                        continue
-                    if len(s) > 65:
-                        s = s[:64]
-                    _chunk = Document(
-                            text=s,
-                            parent_id=doc.id,
-                            location=[s_idx],
-                            modality='content',
-                        )
-                    doc.chunks.append(_chunk)
+                #for s_idx, s in enumerate(doc.text.split('\n')):
+                 #   s = s.strip()
+                  #  if not s:
+                   #     continue
+                    #if len(s) > 65:
+                     #   s = s[:64]
+                  #  _chunk = Document(
+                   #         text=s,
+                    #        parent_id=doc.id,
+                     #       location=[s_idx],
+                      #      modality='content',
+                       # )
+                    #doc.chunks.append(_chunk)
 
                 # paras chunk
                 if doc.tags['_source']['paras']:
@@ -88,6 +88,7 @@ class IndexSentenceSegmenter(Executor):
 
                 # causes chunk
                 if doc.tags['_source']['causes']:
+                    print('causes')
                     for cause in doc.tags['_source']['causes']:
                         if not cause:
                             continue
@@ -95,9 +96,19 @@ class IndexSentenceSegmenter(Executor):
                             text=cause, parent_id=doc.id, modality='causes'
                         )
                         doc.chunks.append(_chunk)
-
-
-
+                # court chunk
+                if doc.tags['_source']['court']:
+                    print('court')
+                    court_ = doc.tags['_source']['court']
+                    print(court_)
+                    
+                    #if not court_:
+                     #   continue
+                    _chunk = Document(
+                            text=court_, parent_id=doc.id, modality='paras'
+                            )
+                    doc.chunks.append(_chunk)
+                    print('add court_')
 
 
             except KeyError as e:
@@ -166,13 +177,17 @@ class AggregateRanker(Executor):
 
                 for m in chunk_match_list:
                     if m.modality == 'content':
-                        m.scores[self.metric].value *= 0.7
+                        m.scores[self.metric].value *= 1
                     if m.modality == 'causes':
-                        m.scores[self.metric].value *= 1.2
+                        m.scores[self.metric].value *= 1
                     if m.modality == 'paras':
-                        m.scores[self.metric].value *= 1.1
+                        print('paras')
+                        m.scores[self.metric].value *= 1
                     if m.modality == 'title':
-                        m.scores[self.metric].value *= 1.25
+                        m.scores[self.metric].value *= 1
+                    if m.modality == 'court':
+                        print('court')
+                        m.scores[self.metric].value *= 1
 
                 chunk_match_list.sort(
                     key=lambda m: self.distance_mult * m.scores[self.metric].value
@@ -198,6 +213,7 @@ class AggregateRanker(Executor):
                 key=lambda d: self.distance_mult * d.scores[self.metric].value
             )
             doc.matches = doc.matches[:top_k]
+
 
             # trim `chunks` and `tags`
             doc.pop('chunks', 'tags')
