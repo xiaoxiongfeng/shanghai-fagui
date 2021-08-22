@@ -105,7 +105,7 @@ class IndexSentenceSegmenter(Executor):
                     #if not court_:
                      #   continue
                     _chunk = Document(
-                            text=court_, parent_id=doc.id, modality='paras'
+                            text=court_, parent_id=doc.id, modality='court'
                             )
                     doc.chunks.append(_chunk)
                     print('add court_')
