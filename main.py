@@ -43,7 +43,7 @@ def create_index_flow():
             name='encoder',
             # uses='jinahub://TransformerTorchEncoder',
             uses='jinahub://TransformerTFTextEncoder',
-            parallel=32,
+            parallel=8,
             uses_with={
                 # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
                 # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
@@ -182,12 +182,13 @@ def index():
             },
         )
 
-        print(f'==> STEP [3/3]: dumping doc data ...')
-        f_index.post(
-            on='/dump',
-            target_peapod='doc_indexer',
-            parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-            )
+        # DONT need dump docs anymore
+        # print(f'==> STEP [3/3]: dumping doc data ...')
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='doc_indexer',
+        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
+        #     )
 
 
 def query():
@@ -197,8 +198,19 @@ def query():
         results = f_query.post(
             on='/search',
             inputs=Document(
-                text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
+                # text=f'我发生了交通事故,我骑自行车，对方是小轿车，属于工伤，在交通事故中我是负同等责任，现已申请工伤待遇，并接受治疗，应该如何寻找理赔？'
                 # text = '海口市美兰区人民检察院与被申请人陈东旭强制医疗一案刑事决定书'
+                text = '西藏自治区类乌齐县人民法院'
+                # text = '甘肃省西和县人民法院'
+                # text = '甘肃省榆中县人民法院'
+                # text = '黑龙江省佳木斯市中级人民法院'
+                # text = '黑龙江省齐齐哈尔市中级人民法院'
+                # text = '海南省海口市秀英区人民法院'
+                # text = '关某与王某华一审民事裁定书'
+                # text = '一审刑事判决书'
+                # text = '天津市静海区人民法院'
+                # text = '北京市丰台区人民法院'
+                # text = '中国人民财产保险股份有限公司北京市分公司一审民事判决书'
             ),
             parameters={'top_k': 3, 'key_words': '危险驾驶罪'},
             return_results=True,
@@ -208,7 +220,7 @@ def query():
         print(f'Query: {doc.id}, {doc.text}')
         for i, m in enumerate(doc.matches):
             print(
-                f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}, {m.text[:50]}...'
+                f'+- [{i}] ({m.scores["inner_product"].value}) {m.id}\n\t法院：{m.tags["_source"]["court"]}\n\t标题：{m.tags["_source"]["title"]}'
             )
             input('Enter to continue...')
 

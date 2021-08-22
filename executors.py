@@ -88,7 +88,6 @@ class IndexSentenceSegmenter(Executor):
 
                 # causes chunk
                 if doc.tags['_source']['causes']:
-                    print('causes')
                     for cause in doc.tags['_source']['causes']:
                         if not cause:
                             continue
@@ -96,19 +95,14 @@ class IndexSentenceSegmenter(Executor):
                             text=cause, parent_id=doc.id, modality='causes'
                         )
                         doc.chunks.append(_chunk)
+
                 # court chunk
                 if doc.tags['_source']['court']:
-                    print('court')
                     court_ = doc.tags['_source']['court']
-                    print(court_)
-                    
-                    #if not court_:
-                     #   continue
                     _chunk = Document(
                             text=court_, parent_id=doc.id, modality='court'
                             )
                     doc.chunks.append(_chunk)
-                    print('add court_')
 
 
             except KeyError as e:
@@ -130,7 +124,7 @@ class QuerySentenceSegmenter(Executor):
                     if len(s) > 65:
                         s = s[:64]
                     _chunk = Document(
-                        text=s + '.....................', parent_id=doc.id, location=[s_idx]
+                        text=s, parent_id=doc.id, location=[s_idx]
                     )
                     doc.chunks.append(_chunk)
         return DocumentArray([d for d in docs if d.chunks])
@@ -181,12 +175,10 @@ class AggregateRanker(Executor):
                     if m.modality == 'causes':
                         m.scores[self.metric].value *= 1
                     if m.modality == 'paras':
-                        print('paras')
                         m.scores[self.metric].value *= 1
                     if m.modality == 'title':
                         m.scores[self.metric].value *= 1
                     if m.modality == 'court':
-                        print('court')
                         m.scores[self.metric].value *= 1
 
                 chunk_match_list.sort(
