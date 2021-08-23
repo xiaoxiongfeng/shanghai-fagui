@@ -18,7 +18,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='./toy-data/case_parse_1234.json'):
+def load_data(data_fn='./toy-data/case_parse_10.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -167,12 +167,11 @@ def index():
     if os.path.exists(os.environ.get('JINA_WORKSPACE')):
         shutil.rmtree(os.environ.get('JINA_WORKSPACE'))
     f_index = create_index_flow()
-    # f_index.plot('.github/index.svg')
     with f_index:
-        print(f'==> STEP [1/3]: indexing data ...')
+        print(f'==> STEP [1/2]: indexing data ...')
         f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
 
-        print(f'==> STEP [2/3]: dumping chunk data ...')
+        print(f'==> STEP [2/2]: dumping chunk data ...')
         f_index.post(
             on='/dump',
             target_peapod='chunk_indexer',
@@ -181,15 +180,6 @@ def index():
                 'shards': 1,
             },
         )
-
-        # DONT need dump docs anymore
-        # print(f'==> STEP [3/3]: dumping doc data ...')
-        # f_index.post(
-        #     on='/dump',
-        #     target_peapod='doc_indexer',
-        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        #     )
-
 
 def query():
     f_query = create_query_flow()

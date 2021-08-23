@@ -9,12 +9,6 @@ from jina.types.score import NamedScore
 import re
 
 from zhon.hanzi import punctuation as chinese_punctuation  # 中文标点符号
-import string
-
-# import pkuseg
-
-# seg = pkuseg.pkuseg(postag=True)  # 开启词性标注功能
-
 chi_punc = '|'.join([c for c in chinese_punctuation])
 
 # 方法2：在切分后，过滤掉split返回的list中的空字符串
@@ -29,31 +23,11 @@ def filter_data(ini_data):
     return new_data
 
 
-# f = open('toy-data/key_dics.txt', 'r')
-# key_list = [s.strip() for s in f.readlines()]
-
-
 class IndexSentenceSegmenter(Executor):
     @requests(on='/index')
     def segment(self, docs: DocumentArray, **kwargs):
         for doc in docs:
-
             try:
-                # content chunk
-                #for s_idx, s in enumerate(doc.text.split('\n')):
-                 #   s = s.strip()
-                  #  if not s:
-                   #     continue
-                    #if len(s) > 65:
-                     #   s = s[:64]
-                  #  _chunk = Document(
-                   #         text=s,
-                    #        parent_id=doc.id,
-                     #       location=[s_idx],
-                      #      modality='content',
-                       # )
-                    #doc.chunks.append(_chunk)
-
                 # paras chunk
                 if doc.tags['_source']['paras']:
                     for tag in doc.tags['_source']['paras']:
