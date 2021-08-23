@@ -28,6 +28,7 @@ indexing and querying
 Index the data at `toy-data/case_parse_10.json`
 
 ```
+docker run -e POSTGRES_PASSWORD=123456  -p 127.0.0.1:5432:5432/tcp postgres:13.2
 python app.py -t index
 ```
 
