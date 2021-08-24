@@ -23,30 +23,15 @@ indexing and querying
 
 ![](.github/doc.svg)
 
-### Index
+### Index & Query
 
 Index the data at `toy-data/case_parse_10.json`
 
 ```
-docker run -e POSTGRES_PASSWORD=123456  -p 127.0.0.1:5432:5432/tcp postgres:13.2
-python app.py -t index
+python app.py -f toy-data/case_parse_1234.json
 ```
 
-### Query
+Open [http://localhost:45678/docs](http://localhost:45678/docs) in your brower.
 
-Query with the data at `toy-data/case_parse_10.json`. The best match is expected to be the query Document itself 
-because it is in the index.
-
-```
-python app.py -t query
-```
-
-### Query with RESTful API
-
-Run the following command and open [http://localhost:45678/docs](http://localhost:45678/docs) in your brower.
-
-```shell
-python app.py -t query_restful
-```
 ![](.github/restful.png)
 ![](.github/restful.gif)

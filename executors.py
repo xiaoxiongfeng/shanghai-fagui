@@ -1,6 +1,3 @@
-
-
-
 from typing import List, Dict
 from itertools import groupby
 

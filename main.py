@@ -1,5 +1,6 @@
 import json
 import os
+import click
 
 from jina import Document, Flow
 from executors import IndexSentenceSegmenter, QuerySentenceSegmenter
@@ -30,24 +31,31 @@ def load_data(data_fn='./toy-data/case_parse_100.json'):
                 continue
 
 
-description='example: {"data": [{"text": "信用卡纠纷申请执行人中国邮政储蓄银行股份有限公司天津武清区支行与被执行人程红玉信用卡纠纷一案"}], "parameters": {"top_k": 10}}'
-
-
-def index_query(remove_workspace=True):
+def index_query(filename):
     import shutil
-    if remove_workspace and os.path.exists(os.environ.get('JINA_WORKSPACE')):
+    if os.path.exists(os.environ.get('JINA_WORKSPACE')):
         shutil.rmtree(os.environ.get('JINA_WORKSPACE'))
     f = Flow.load_config('index.yml')
     with f:
-        f.post(on='/index', inputs=load_data, request_size=2, show_progress=True)
+        f.post(on='/index', inputs=load_data(filename), request_size=2, show_progress=True)
         f.protocol = 'http'
         f.cors = True
+        f.expose_endpoint(
+            '/search',
+            summary='Search the docs',
+            description='example: {"data": [{"text": "信用卡纠纷"}], "parameters": {"top_k": 10}}',
+        )
         f.block()
 
-
-def main():
+@click.command()
+@click.option(
+    '--filename',
+    '-f',
+    type=click.Path(exists=True),
+    default='toy-data/case_parse_10.json')
+def main(filename):
     config()
-    index_query()
+    index_query(filename)
 
 
 if __name__ == "__main__":

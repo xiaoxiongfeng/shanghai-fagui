@@ -3,6 +3,7 @@ version: '1'
 with:
   port_expose: 45678
   no_debug_endpoints: True
+
 executors:
   - name: 'segmenter'
     uses: IndexSentenceSegmenter
@@ -29,5 +30,3 @@ executors:
          - 'cc'
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
-
-#      'uer/chinese_roberta_L-4_H-256'  #'hfl/chinese-legal-electra-small-generator'
