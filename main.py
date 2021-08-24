@@ -38,16 +38,16 @@ def create_index_flow():
     flow = (
         Flow()
         .add(uses=IndexSentenceSegmenter, name='segmenter')
-        # .add(
-        #     name='encoder',
-        #     uses='jinahub://TransformerTFTextEncoder',
-        #     parallel=8,
-        #     uses_with={
-        #         'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
-        #         'on_gpu': False,
-        #         'default_batch_size': 128,
-        #         'max_length': 256,
-        #         'default_traversal_paths': ['c']})
+        .add(
+            name='encoder',
+            uses='jinahub://TransformerTFTextEncoder',
+            parallel=8,
+            uses_with={
+                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+                'on_gpu': False,
+                'default_batch_size': 128,
+                'max_length': 256,
+                'default_traversal_paths': ['c', 'cc']})
         # .add(
         #     name='chunk_indexer',
         #     uses='jinahub://PostgreSQLStorage',
@@ -136,7 +136,10 @@ def index():
             for doc in r.docs:
                 print(f'{doc.id}: {len(doc.chunks)}')
                 for c in doc.chunks:
-                    print(f'+- {c.id}: {c.text}, {c.tags}')
+                    print(f'  +- {c.id}: {c.text}, {c.tags}, {c.modality}')
+                    if c.chunks:
+                        for cc in c.chunks:
+                            print(f'    +- {cc.id}: {cc.text}, {cc.tags}, {cc.modality}')
 
         # print(f'==> STEP [2/2]: dumping chunk data ...')
         # f_index.post(

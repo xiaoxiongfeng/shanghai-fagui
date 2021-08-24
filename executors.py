@@ -8,6 +8,8 @@ from jina import Document, DocumentArray, Executor, requests
 from jina.types.score import NamedScore
 import re
 
+import pkuseg
+
 from zhon.hanzi import punctuation as chinese_punctuation  # 中文标点符号
 chi_punc = '|'.join([c for c in chinese_punctuation])
 
@@ -24,6 +26,10 @@ def filter_data(ini_data):
 
 
 class IndexSentenceSegmenter(Executor):
+    def __init__(self, **kwargs):
+        super(IndexSentenceSegmenter, self).__init__(**kwargs)
+        self.seg = pkuseg.pkuseg(model_name='news', postag=True)
+
     @requests(on='/index')
     def segment(self, docs: DocumentArray, **kwargs):
         if not docs:
@@ -37,44 +43,111 @@ class IndexSentenceSegmenter(Executor):
                 for para in paras:
                     if not para['content']:
                         continue
-                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea', 'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '当事人信息', '基础信息', '本院认为']:
+                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea', 'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '基础信息', '本院认为', '裁判结果', '调解结果']:
                         continue
                     for p_idx, p in enumerate(para['content'].split('\n')):
                         s_list = filter_data(re.split(r'' + ('[。]'), p))
                         for s_idx, s in enumerate(s_list):
                             s = s.strip()
                             _chunk = Document(
-                                text=s[:64], parent_id=doc.id, modality='paras', location=[p_idx, s_idx])
+                                text=s[-64:], parent_id=doc.id, modality='paras', location=[p_idx, s_idx])
                             _chunk.tags['para_tag'] = para['tag']
                             doc.chunks.append(_chunk)
 
             # title chunk
-            # for s_idx, s in enumerate(doc.tags['_source']['title'].split('\n')):
-            #     s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
-            #     for s_idx, s in enumerate(s_list):
-            #         s = s.strip()
-            #         if not s:
-            #             continue
-            #         if len(s) > 65:
-            #             s = s[:64]
-            #         _chunk = Document(
-            #             text=s,
-            #             parent_id=doc.id,
-            #             location=[s_idx, s_idx],
-            #             modality='title',
-            #         )
-            #         doc.chunks.append(_chunk)
-            #
-            # # causes chunk
-            # if doc.tags['_source']['causes']:
-            #     for cause in doc.tags['_source']['causes']:
-            #         if not cause:
-            #             continue
-            #         _chunk = Document(
-            #             text=cause, parent_id=doc.id, modality='causes'
-            #         )
-            #         doc.chunks.append(_chunk)
-            #
+            title = doc.tags['_source'].get('title', None)
+            if title:
+                title_list = title.split('\n')
+                title_text = ''.join(title_list)
+                _chunk = Document(
+                    text=title_text[-64:],
+                    parent_id=doc.id,
+                    modality='title',
+                )
+                for s_idx, s in enumerate(title_list):
+                    s_list = filter_data(re.split(r'' + ('[' + chi_punc + ' ' + ']'), s))
+                    if len(s_list) <= 1:
+                        continue
+                    for s_idx, s in enumerate(s_list):
+                        s = s.strip()
+                        if not s:
+                            continue
+                        if s == _chunk.text:
+                            continue
+                        _chunk_chunk = Document(
+                            text=s[-64:],
+                            parent_id=_chunk.id,
+                            location=[s_idx, s_idx],
+                            modality='title_subsentence',
+                        )
+                        print(f'add chunk chunk, {len(_chunk_chunk.text)}: {len(_chunk.text)}')
+                        _chunk.chunks.append(_chunk_chunk)
+                doc.chunks.append(_chunk)
+
+            # causes chunk
+            causes = doc.tags['_source'].get('causes', None)
+            if causes:
+                for cause in causes:
+                    if cause in ['其他', ]:
+                       continue
+                    if not cause:
+                        continue
+                    _chunk = Document(
+                        text=cause, parent_id=doc.id, modality='causes'
+                    )
+                    doc.chunks.append(_chunk)
+
+            # docType chunk
+            doc_type = doc.tags['_source'].get('docType', None)
+            if doc_type:
+                _chunk = Document(
+                    text=doc_type, parent_id=doc.id, modality='docType'
+                )
+                doc.chunks.append(_chunk)
+
+            # topCause chunk
+            top_cause = doc.tags['_source'].get('topCause', None)
+            if top_cause:
+                _chunk = Document(
+                    text=top_cause, parent_id=doc.id, modality='topCause'
+                )
+                doc.chunks.append(_chunk)
+
+            # topCause+docType chunk
+            if top_cause and doc_type:
+                _chunk = Document(
+                    text=top_cause+doc_type, parent_id=doc.id, modality='topCause_docType'
+                )
+                doc.chunks.append(_chunk)
+
+            # trialRound chunk
+            trial_round = doc.tags['_source'].get('trialRound', None)
+            if trial_round in ['其他', ]:
+                trial_round = None
+            if trial_round:
+                _chunk = Document(
+                    text=trial_round, parent_id=doc.id, modality='trialRound'
+                )
+                doc.chunks.append(_chunk)
+
+            # trialRound+docType
+            if trial_round and doc_type:
+                _chunk = Document(
+                    text=trial_round+doc_type,
+                    parent_id=doc.id,
+                    modality='trialRound_docType'
+                )
+                doc.chunks.append(_chunk)
+
+            # topCause+docType chunk
+            if trial_round and top_cause and doc_type:
+                _chunk = Document(
+                    text=trial_round + top_cause + doc_type,
+                    parent_id=doc.id,
+                    modality='trialRound_topCause_docType'
+                )
+                doc.chunks.append(_chunk)
+
             # # court chunk
             # if doc.tags['_source']['court']:
             #     court_ = doc.tags['_source']['court']
