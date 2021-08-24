@@ -1,0 +1,33 @@
+jtype: Flow
+version: '1'
+with:
+  port_expose: 45678
+  no_debug_endpoints: True
+executors:
+  - name: 'segmenter'
+    uses: IndexSentenceSegmenter
+  - name: 'q_segmenter'
+    uses: QuerySentenceSegmenter
+  - name: 'encoder'
+    uses: 'jinahub://TransformerTorchEncoder'
+    parallel: 8
+    uses_with:
+      pretrained_model_name_or_path: 'junnyu/wobert_chinese_base'
+      pooling_strategy: 'cls'
+      on_gpu: False
+      default_batch_size: 128
+      max_length: 256
+      default_traversal_paths:
+        - 'c'
+        - 'cc'
+  - name: 'chunk_indexer'
+    uses: 'jinahub://SimpleIndexer'
+    uses_with:
+       index_file_name: ${JINA_DUMP_PATH_CHUNK}
+       default_traversal_paths:
+         - 'c'
+         - 'cc'
+    uses_metas:
+       workspace: ${JINA_WORKSPACE_CHUNK}
+
+#      'uer/chinese_roberta_L-4_H-256'  #'hfl/chinese-legal-electra-small-generator'

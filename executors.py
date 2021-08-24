@@ -26,10 +26,6 @@ def filter_data(ini_data):
 
 
 class IndexSentenceSegmenter(Executor):
-    def __init__(self, **kwargs):
-        super(IndexSentenceSegmenter, self).__init__(**kwargs)
-        self.seg = pkuseg.pkuseg(model_name='news', postag=True)
-
     @requests(on='/index')
     def segment(self, docs: DocumentArray, **kwargs):
         if not docs:
@@ -147,18 +143,22 @@ class IndexSentenceSegmenter(Executor):
                 )
                 doc.chunks.append(_chunk)
 
-            # # court chunk
-            # if doc.tags['_source']['court']:
-            #     court_ = doc.tags['_source']['court']
-            #     _chunk = Document(
-            #             text=court_, parent_id=doc.id, modality='court'
-            #             )
-            #     doc.chunks.append(_chunk)
+            # court chunk
+            if doc.tags['_source']['court']:
+                court_ = doc.tags['_source']['court']
+                _chunk = Document(
+                        text=court_, parent_id=doc.id, modality='court'
+                        )
+                doc.chunks.append(_chunk)
 
         return DocumentArray([d for d in docs if d.chunks])
 
 
 class QuerySentenceSegmenter(Executor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.seg = pkuseg.pkuseg(model_name='news', postag=False)
+
     @requests(on='/search')
     def segment(self, docs: DocumentArray, **kwargs):
         for doc in docs:
