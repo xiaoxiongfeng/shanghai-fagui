@@ -80,7 +80,6 @@ class IndexSentenceSegmenter(Executor):
                             location=[s_idx, s_idx],
                             modality='title_subsentence',
                         )
-                        print(f'add chunk chunk, {len(_chunk_chunk.text)}: {len(_chunk.text)}')
                         _chunk.chunks.append(_chunk_chunk)
                 doc.chunks.append(_chunk)
 
@@ -163,18 +162,14 @@ class QuerySentenceSegmenter(Executor):
     @requests(on='/search')
     def segment(self, docs: DocumentArray, **kwargs):
         for doc in docs:
-            for s_idx, s in enumerate(doc.text.split('\n')):
-                #s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
-                #for ss_idx, ss in enumerate(s_list):
-                    s = s.strip()
-                    if not s:
-                        continue
-                    if len(s) > 65:
-                        s = s[:64]
-                    _chunk = Document(
-                        text=s, parent_id=doc.id, location=[s_idx]
-                    )
-                    doc.chunks.append(_chunk)
+            for s_idx, s in enumerate(doc.text.split(' ')):
+                s = s.strip()
+                if not s:
+                    continue
+                _chunk = Document(
+                    text=s[:64], parent_id=doc.id, location=[s_idx]
+                )
+                doc.chunks.append(_chunk)
         return DocumentArray([d for d in docs if d.chunks])
 
 
