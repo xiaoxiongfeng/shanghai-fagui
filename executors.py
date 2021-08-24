@@ -26,61 +26,62 @@ def filter_data(ini_data):
 class IndexSentenceSegmenter(Executor):
     @requests(on='/index')
     def segment(self, docs: DocumentArray, **kwargs):
+        if not docs:
+            return
         for doc in docs:
-            try:
-                # paras chunk
-                if doc.tags['_source']['paras']:
-                    for tag in doc.tags['_source']['paras']:
-                        try:
-                            if not tag['content']:
-                                continue
-                            if len(tag['content']) > 65:
-                                tag['content'] = tag['content'][:64]
-                            _chunk = Document(
-                                text=tag['content'], parent_id=doc.id, modality='paras'
-                            )
-                            doc.chunks.append(_chunk)
-                        except KeyError as e:
-                            continue
-
-                # title chunk
-                for s_idx, s in enumerate(doc.tags['_source']['title'].split('\n')):
-                    s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
-                    for ss_idx, ss in enumerate(s_list):
-                        ss = ss.strip()
-                        if not ss:
-                            continue
-                        if len(ss) > 65:
-                            ss = ss[:64]
-                        _chunk = Document(
-                            text=ss,
-                            parent_id=doc.id,
-                            location=[s_idx, ss_idx],
-                            modality='title',
-                        )
-                        doc.chunks.append(_chunk)
-
-                # causes chunk
-                if doc.tags['_source']['causes']:
-                    for cause in doc.tags['_source']['causes']:
-                        if not cause:
-                            continue
-                        _chunk = Document(
-                            text=cause, parent_id=doc.id, modality='causes'
-                        )
-                        doc.chunks.append(_chunk)
-
-                # court chunk
-                if doc.tags['_source']['court']:
-                    court_ = doc.tags['_source']['court']
-                    _chunk = Document(
-                            text=court_, parent_id=doc.id, modality='court'
-                            )
-                    doc.chunks.append(_chunk)
-
-
-            except KeyError as e:
+            if '_source' not in doc.tags:
                 continue
+            # paras chunk, we need to filter the paras based on types
+            paras = doc.tags['_source'].get('paras', None)
+            if paras:
+                for para in paras:
+                    if not para['content']:
+                        continue
+                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea', 'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '当事人信息', '基础信息', '本院认为']:
+                        continue
+                    for p_idx, p in enumerate(para['content'].split('\n')):
+                        s_list = filter_data(re.split(r'' + ('[。]'), p))
+                        for s_idx, s in enumerate(s_list):
+                            s = s.strip()
+                            _chunk = Document(
+                                text=s[:64], parent_id=doc.id, modality='paras', location=[p_idx, s_idx])
+                            _chunk.tags['para_tag'] = para['tag']
+                            doc.chunks.append(_chunk)
+
+            # title chunk
+            # for s_idx, s in enumerate(doc.tags['_source']['title'].split('\n')):
+            #     s_list = filter_data(re.split(r'' + ("[" + chi_punc + "]"), s))
+            #     for s_idx, s in enumerate(s_list):
+            #         s = s.strip()
+            #         if not s:
+            #             continue
+            #         if len(s) > 65:
+            #             s = s[:64]
+            #         _chunk = Document(
+            #             text=s,
+            #             parent_id=doc.id,
+            #             location=[s_idx, s_idx],
+            #             modality='title',
+            #         )
+            #         doc.chunks.append(_chunk)
+            #
+            # # causes chunk
+            # if doc.tags['_source']['causes']:
+            #     for cause in doc.tags['_source']['causes']:
+            #         if not cause:
+            #             continue
+            #         _chunk = Document(
+            #             text=cause, parent_id=doc.id, modality='causes'
+            #         )
+            #         doc.chunks.append(_chunk)
+            #
+            # # court chunk
+            # if doc.tags['_source']['court']:
+            #     court_ = doc.tags['_source']['court']
+            #     _chunk = Document(
+            #             text=court_, parent_id=doc.id, modality='court'
+            #             )
+            #     doc.chunks.append(_chunk)
 
         return DocumentArray([d for d in docs if d.chunks])
 

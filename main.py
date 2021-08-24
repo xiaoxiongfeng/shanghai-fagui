@@ -25,7 +25,7 @@ def load_data(data_fn='./toy-data/case_parse_10.json'):
                 continue
             doc = Document(json.loads(l))
             try:
-                doc.text = doc.tags['_source']['content']
+                doc.text = doc.tags['_source']['title']
                 doc.id = doc.tags['_id']
                 counter += 1
                 yield doc
@@ -38,39 +38,32 @@ def create_index_flow():
     flow = (
         Flow()
         .add(uses=IndexSentenceSegmenter, name='segmenter')
-        .add(
-            name='encoder',
-            # uses='jinahub://TransformerTorchEncoder',
-            uses='jinahub://TransformerTFTextEncoder',
-            parallel=8,
-            uses_with={
-                'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
-                'on_gpu': False,
-                'default_batch_size': 128,
-                'max_length': 256,
-                'default_traversal_paths': ['c'],
-            },
-        )
-        .add(
-            name='chunk_indexer',
-            uses='jinahub://PostgreSQLStorage',
-            uses_with={
-                'table': 'chunk_indexer_legal_electra_table_court3',
-                'default_traversal_paths': ['c'],
-            },
-            uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
-        )
-        .add(
-            name='doc_indexer',
-            uses='jinahub://PostgreSQLStorage',
-            uses_with={
-                'table': 'doc_indexer_table_court3',
-                'default_traversal_paths': ['r'],
-            },
-            uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
-            needs='gateway',
-        )
-        .add(name='joiner', needs=['chunk_indexer', 'doc_indexer'])
+        # .add(
+        #     name='encoder',
+        #     uses='jinahub://TransformerTFTextEncoder',
+        #     parallel=8,
+        #     uses_with={
+        #         'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
+        #         'on_gpu': False,
+        #         'default_batch_size': 128,
+        #         'max_length': 256,
+        #         'default_traversal_paths': ['c']})
+        # .add(
+        #     name='chunk_indexer',
+        #     uses='jinahub://PostgreSQLStorage',
+        #     uses_with={
+        #         'table': 'chunk_indexer_legal_electra_table_court3',
+        #         'default_traversal_paths': ['c']},
+        #     uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]})
+        # .add(
+        #     name='doc_indexer',
+        #     uses='jinahub://PostgreSQLStorage',
+        #     uses_with={
+        #         'table': 'doc_indexer_table_court3',
+        #         'default_traversal_paths': ['r']},
+        #     uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
+        #     needs='gateway')
+        # .add(name='joiner', needs=['chunk_indexer', 'doc_indexer'])
     )
 
     return flow
@@ -138,17 +131,22 @@ def index():
     f_index = create_index_flow()
     with f_index:
         print(f'==> STEP [1/2]: indexing data ...')
-        f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True)
+        resp = f_index.post(on='/index', inputs=load_data, request_size=1, show_progress=True, return_results=True)
+        for r in resp:
+            for doc in r.docs:
+                print(f'{doc.id}: {len(doc.chunks)}')
+                for c in doc.chunks:
+                    print(f'+- {c.id}: {c.text}, {c.tags}')
 
-        print(f'==> STEP [2/2]: dumping chunk data ...')
-        f_index.post(
-            on='/dump',
-            target_peapod='chunk_indexer',
-            parameters={
-                'dump_path': os.environ.get('JINA_DUMP_PATH_CHUNK'),
-                'shards': 1,
-            },
-        )
+        # print(f'==> STEP [2/2]: dumping chunk data ...')
+        # f_index.post(
+        #     on='/dump',
+        #     target_peapod='chunk_indexer',
+        #     parameters={
+        #         'dump_path': os.environ.get('JINA_DUMP_PATH_CHUNK'),
+        #         'shards': 1,
+        #     },
+        # )
 
 def query():
     f_query = create_query_flow()
@@ -186,10 +184,10 @@ def query():
 def update():
     f_index = create_index_flow()
     with f_index:
-        print(f'==> STEP [1/3]: update data ...')
+        print(f'==> STEP [1/2]: update data ...')
         f_index.post(on='/update', inputs=load_data, request_size=1, show_progress=True)
 
-        print(f'==> STEP [2/3]: dumping chunk data ...')
+        print(f'==> STEP [2/2]: dumping chunk data ...')
         f_index.post(
             on='/dump',
             target_peapod='chunk_indexer',
@@ -203,10 +201,10 @@ def update():
 def delete():
     f_index = create_index_flow()
     with f_index:
-        print(f'==> STEP [1/3]: delete data ...')
+        print(f'==> STEP [1/2]: delete data ...')
         f_index.post(on='/delete', inputs=load_data, request_size=1, show_progress=True)
 
-        print(f'==> STEP [2/3]: dumping chunk data ...')
+        print(f'==> STEP [2/2]: dumping chunk data ...')
         f_index.post(
             on='/dump',
             target_peapod='chunk_indexer',
@@ -245,16 +243,18 @@ def query_restful(port_expose='47678'):
 )
 def main(task):
     config()
-    if task == "index":
-        index()
-    elif task == "query":
-        query()
-    elif task == 'update':
-        update()
-    elif task == 'delete':
-        delete()
-    elif task == 'query_restful':
-        query_restful()
+    index()
+    # query()
+    # if task == "index":
+    #     index()
+    # elif task == "query":
+    #     query()
+    # elif task == 'update':
+    #     update()
+    # elif task == 'delete':
+    #     delete()
+    # elif task == 'query_restful':
+    #     query_restful()
 
 
 if __name__ == "__main__":
