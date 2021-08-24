@@ -8,7 +8,6 @@ from executors import (
     QuerySentenceSegmenter,
     AggregateRanker,
 )
-from executors import DebugExecutor
 
 def config():
     os.environ["JINA_WORKSPACE"] = "./workspace"
@@ -45,12 +44,6 @@ def create_index_flow():
             uses='jinahub://TransformerTFTextEncoder',
             parallel=8,
             uses_with={
-                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                # 'device': 'cpu',
-                # 'num_threads': 8,
-                # 'max_length': 512,
-                # 'default_batch_size': 16,
                 'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
                 'on_gpu': False,
                 'default_batch_size': 128,
@@ -67,7 +60,6 @@ def create_index_flow():
             },
             uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
         )
-        # .add(name='remover', uses=RemoveTags, needs='gateway')
         .add(
             name='doc_indexer',
             uses='jinahub://PostgreSQLStorage',
@@ -90,24 +82,14 @@ def create_query_flow():
         .add(name='segmenter', uses=QuerySentenceSegmenter)
         .add(
             name='encoder',
-            # uses='jinahub://TransformerTorchEncoder',
             uses='jinahub://TransformerTFTextEncoder',
             parallel=1,
             uses_with={
-                # 'base_tokenizer_model': 'hfl/chinese-roberta-wwm-ext',
-                # 'pretrained_model_name_or_path': 'xcjthu/Lawformer',
-                # 'device': 'cpu',
-                # 'num_threads': 8,
-                # 'max_length': 512,
-                # 'default_batch_size': 16,
                 'pretrained_model_name_or_path': 'hfl/chinese-legal-electra-small-generator',
                 'on_gpu': False,
                 'max_length': 256,
                 'default_batch_size': 32,
-                'default_traversal_paths': ['c'],
-            },
-        )
-        # .add(name='debug', uses=DebugExecutor)
+                'default_traversal_paths': ['c']})
         .add(
             name='chunk_vec_indexer',
             uses='jinahub://FaissSearcher',
@@ -120,42 +102,29 @@ def create_query_flow():
                 'normalize': True,  # i.e., cosine metric
                 'is_distance': False,
                 'dump_path': os.environ["JINA_DUMP_PATH_CHUNK"],
-                'default_traversal_paths': [
-                    'c',
-                ],
-            },
-            uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
-        )
-        # .add(name='debug', uses=DebugExecutor)
+                'default_traversal_paths': ['c']},
+            uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]})
         .add(
             name='chunk_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
                 'table': 'chunk_indexer_legal_electra_table_court3',
-                'default_traversal_paths': ['cm'],
-            },
-            uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]},
-        )
-        # .add(name='debug', uses=DebugExecutor)
+                'default_traversal_paths': ['cm']},
+            uses_metas={'workspace': os.environ["JINA_WORKSPACE_CHUNK"]})
         .add(
             name='ranker',
             uses='AggregateRanker',
             uses_with={
                 'metric': 'inner_product',
                 'is_distance': False,
-                'default_traversal_paths': [
-                    'r',
-                ],
-            },
-        )
+                'default_traversal_paths': ['r',]})
         .add(
             name='doc_kv_indexer',
             uses='jinahub://PostgreSQLStorage',
             uses_with={
                 'table': 'doc_indexer_table_court3',
-                'default_traversal_paths': ['m'],
-            },
-            uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]},
+                'default_traversal_paths': ['m']},
+            uses_metas={'workspace': os.environ["JINA_WORKSPACE_DOC"]}
         )
     )
     return flow
@@ -183,7 +152,6 @@ def index():
 
 def query():
     f_query = create_query_flow()
-    # f_query.plot('.github/query.svg')
     with f_query:
         results = f_query.post(
             on='/search',
@@ -231,13 +199,6 @@ def update():
             },
         )
 
-        # print(f'==> STEP [3/3]: dumping doc data ...')
-        # f_index.post(
-        #     on='/dump',
-        #     target_peapod='doc_indexer',
-        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        # )
-
 
 def delete():
     f_index = create_index_flow()
@@ -254,13 +215,6 @@ def delete():
                 'shards': 1,
             },
         )
-
-        # print(f'==> STEP [3/3]: dumping doc data ...')
-        # f_index.post(
-        #     on='/dump',
-        #     target_peapod='doc_indexer',
-        #     parameters={'dump_path': os.environ.get('JINA_DUMP_PATH_DOC'), 'shards': 1},
-        # )
 
 
 def query_restful(port_expose='47678'):
