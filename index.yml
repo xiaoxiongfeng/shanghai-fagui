@@ -6,9 +6,15 @@ with:
 
 executors:
   - name: 'segmenter'
-    uses: IndexSentenceSegmenter
+    uses:
+      jtype: IndexSentenceSegmenter
+    py_modules:
+      - executors.py
   - name: 'q_segmenter'
-    uses: QuerySentenceSegmenter
+    uses:
+      jtype: QuerySentenceSegmenter
+    py_modules:
+      - executors.py
   - name: 'encoder'
     uses: 'jinahub://TransformerTorchEncoder'
     parallel: 8

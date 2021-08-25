@@ -3,7 +3,6 @@ import os
 import click
 
 from jina import Document, Flow
-from executors import IndexSentenceSegmenter, QuerySentenceSegmenter
 
 
 def config():
