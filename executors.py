@@ -1,5 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 from itertools import groupby
+from gensim.summarization import bm25
+import numpy as np
 
 from jina import Document, DocumentArray, Executor, requests
 from jina.types.score import NamedScore
@@ -283,3 +285,115 @@ class DebugExecutor(Executor):
                 print(
                     f'[{i} - {j}]: {len(c.matches)} - [{" ".join([str(m.scores[self.metric].value) for m in c.matches])}]'
                 )
+
+
+class IndexNameSegmenter(Executor):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.seg = pkuseg.pkuseg(model_name='news')
+        self._punct_pat = re.compile(r'' + ('[' + chi_punc + ' -' + ']'))
+        self._name_tags = frozenset(['书记员', '审判人员', 'judges', '审判法官', '当事人信息'])
+        self._party_blacklist = frozenset(['二〇', '二O', '二零'])
+
+    @requests(on='/search')
+    def segement(self, docs: Optional[DocumentArray], **kwargs):
+        if not docs:
+            return
+        for doc in docs:
+            for c in doc.chunks:
+                if not c.text:
+                    continue
+                c.text = ' '.join(self.seg.cut(c.text))
+
+    @requests(on='/index')
+    def extract_name(self, docs: Optional[DocumentArray], **kwargs):
+        if not docs:
+            return
+        for doc in docs:
+            _source = doc.tags.get('_source', None)
+            if not _source:
+                continue
+            result = []
+            # extract party info
+            _party = _source.get('party', None)
+            result += self._extract_party(_party)
+            # extract paras info
+            _paras = _source.get('paras', None)
+            result += self._extract_paras(_paras)
+            doc.text = ' '.join(result)
+            doc.modality = 'name'
+            doc.pop('tags')
+
+    def _extract_party(self, data_dict: Optional[Dict]):
+        result = []
+        if not data_dict:
+            return result
+        for p in data_dict:
+            _name = p.get('name', None)
+            _type = p.get('type', None)
+            if _name:
+                result += self.seg.cut(_name)
+        return result
+
+    def _extract_paras(self, data_dict: Optional[Dict]):
+        result = []
+        if not data_dict:
+            return result
+        for para in data_dict:
+            content = para.get('content', None)
+            if not content:
+                continue
+            tag = para.get('tag', None)
+            if tag in self._name_tags:
+                for c in content.split('\n'):
+                    c = c.strip()
+                    if not c or len(c) > 10:
+                        continue
+                    if c[:2] in self._party_blacklist:
+                        continue
+                    for s in filter_data(self._punct_pat.split(c)):
+                        result += self.seg.cut(s)
+        return result
+
+
+class BM25Indexer(Executor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._flush = False
+        self._model = None
+        self._corpus = []
+        self._doc_list = []
+
+    @requests(on='/index')
+    def index(self, docs: Optional[DocumentArray], **kwargs):
+        if not docs:
+            return
+        for doc in docs:
+            if not doc.text:
+                continue
+            self._corpus.append(doc.text.split(' '))
+            self._doc_list.append(doc)
+            self._flush = True
+
+    @requests(on='/search')
+    def search(self, docs: Optional[DocumentArray], parameters: dict, **kwargs):
+        if not docs:
+            return
+        if self._model is None or self._flush:
+            self._model = bm25.BM25(self._corpus)
+            self._flush = False
+        top_k = min(len(self._corpus), int(parameters.get('top_k', 10)))
+        for doc in docs:
+            tokens = []
+            for c in doc.chunks:
+                tokens += c.text.split(' ')
+            scores = np.array(self._model.get_scores(tokens))
+            # return top_k from the scores and the Documents
+            ind = np.argpartition(scores, -top_k)[-top_k:]
+            for idx in reversed(ind):
+                score = scores[idx]
+                if score <= 0:
+                    break
+                m = self._doc_list[idx]
+                m.scores['bm25'] = NamedScore(value=score)
+                doc.matches.append(m)

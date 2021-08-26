@@ -17,7 +17,7 @@ executors:
       - executors.py
   - name: 'encoder'
     uses: 'jinahub://TransformerTorchEncoder'
-    parallel: 8
+    parallel: 2
     uses_with:
       pretrained_model_name_or_path: 'junnyu/wobert_chinese_base'
       pooling_strategy: 'cls'
@@ -36,3 +36,21 @@ executors:
          - 'cc'
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: 'name_segmenter'
+    uses:
+      jtype: IndexNameSegmenter
+    py_modules:
+      - executors.py
+    needs: 'q_segmenter'
+  - name: 'name_indexer'
+    uses:
+      jtype: BM25Indexer
+    py_modules:
+      - executors.py
+  - name: 'merger'
+    uses: 'jinahub://MatchMerger'
+    usess_with:
+      default_traversal_paths:
+        - 'r'
+        - 'c'
+    needs: ['chunk_indexer', 'name_indexer']
