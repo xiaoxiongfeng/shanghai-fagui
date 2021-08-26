@@ -289,7 +289,7 @@ class DebugExecutor(Executor):
 
 class IndexNameSegmenter(Executor):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
         self.seg = pkuseg.pkuseg(model_name='news')
         self._punct_pat = re.compile(r'' + ('[' + chi_punc + ' -' + ']'))
         self._name_tags = frozenset(['书记员', '审判人员', 'judges', '审判法官', '当事人信息'])
@@ -322,7 +322,7 @@ class IndexNameSegmenter(Executor):
             result += self._extract_paras(_paras)
             doc.text = ' '.join(result)
             doc.modality = 'name'
-            doc.pop('tags')
+            doc.pop('tags', 'chunks')
 
     def _extract_party(self, data_dict: Optional[Dict]):
         result = []
@@ -390,10 +390,50 @@ class BM25Indexer(Executor):
             scores = np.array(self._model.get_scores(tokens))
             # return top_k from the scores and the Documents
             ind = np.argpartition(scores, -top_k)[-top_k:]
-            for idx in reversed(ind):
+            ind = sorted(ind, key=lambda x: scores[x], reverse=True)
+            for idx in ind:
                 score = scores[idx]
                 if score <= 0:
                     break
                 m = self._doc_list[idx]
                 m.scores['bm25'] = NamedScore(value=score)
                 doc.matches.append(m)
+
+
+class CaseNumSegmenter(Executor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.seg = pkuseg.pkuseg(model_name='news')
+        self._char_blacklist = frozenset(chinese_punctuation)
+
+    @requests(on='/index')
+    def extract_casenum(self, docs: Optional[DocumentArray], **kwargs):
+        if not docs:
+            return
+        for doc in docs:
+            _source = doc.tags.get('_source', None)
+            if not _source:
+                continue
+            _case_num = _source.get('caseNumber', None)
+            if not _case_num:
+                continue
+            doc.text = self._cut(_case_num)
+            doc.modality = 'caseNumber'
+            doc.pop('tags', 'chunks')
+
+    @requests(on='/search')
+    def segment(self, docs: Optional[DocumentArray], **kwargs):
+        if not docs:
+            return
+        for doc in docs:
+            for c in doc.chunks:
+                if not c.text:
+                    continue
+                c.text = self._cut(c.text)
+
+    def _cut(self, case_num_str):
+        return ' '.join([
+            t for t in self.seg.cut(case_num_str)
+            if t not in self._char_blacklist])
+
+

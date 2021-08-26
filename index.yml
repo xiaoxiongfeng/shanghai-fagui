@@ -47,10 +47,21 @@ executors:
       jtype: BM25Indexer
     py_modules:
       - executors.py
+  - name: 'case_num_segmenter'
+    uses:
+      jtype: CaseNumSegmenter
+    py_modules:
+      - executors.py
+    needs: 'q_segmenter'
+  - name: 'case_num_indexer'
+    uses:
+      jtype: BM25Indexer
+    py_modules:
+      - executors.py
   - name: 'merger'
     uses: 'jinahub://MatchMerger'
     usess_with:
       default_traversal_paths:
         - 'r'
         - 'c'
-    needs: ['chunk_indexer', 'name_indexer']
+    needs: ['chunk_indexer', 'name_indexer', 'case_num_indexer']

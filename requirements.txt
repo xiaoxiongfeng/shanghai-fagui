@@ -1,6 +1,7 @@
 jina[hub]==2.0.18
-zhon
-pkuseg
+zhon==1.1.5
+pkuseg==0.0.25
+gensim==3.8.3
 click==7.1.2
 tensorflow_cpu==2.5.0
 transformers==4.6.1
