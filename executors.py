@@ -9,6 +9,8 @@ import re
 
 import pkuseg
 
+MAX_MODALITIES = 100
+
 from zhon.hanzi import punctuation as chinese_punctuation  # 中文标点符号
 chi_punc = '|'.join([c for c in chinese_punctuation])
 
@@ -71,7 +73,7 @@ class IndexSentenceSegmenter(Executor):
                             continue
                         _chunk_chunk = Document(
                             text=s[-64:],
-                            parent_id=_chunk.id,
+                            parent_id=doc.id,
                             location=[s_idx, s_idx],
                             modality='title_subsentence',
                         )
@@ -192,62 +194,45 @@ class AggregateRanker(Executor):
 
     @requests(on='/search')
     def rank(self, docs: DocumentArray, parameters: Dict = None, **kwargs):
-
         top_k = int(parameters.get('top_k', self.default_top_k))
 
         traversal_paths = parameters.get(
-            'traversal_paths', self.default_traversal_paths
-        )
+            'traversal_paths', self.default_traversal_paths)
 
         for doc in docs.traverse_flat(traversal_paths):
             matches_of_chunks = []
             for chunk in doc.chunks:
                 matches_of_chunks.extend(chunk.matches)
-
             groups = groupby(
                 sorted(matches_of_chunks, key=lambda d: d.parent_id),
-                lambda d: d.parent_id,
-            )
+                lambda d: d.parent_id)
+
             for key, group in groups:
                 chunk_match_list = list(group)
-
-                for m in chunk_match_list:
-                    if m.modality == 'content':
-                        m.scores[self.metric].value *= 1
-                    if m.modality == 'causes':
-                        m.scores[self.metric].value *= 1
-                    if m.modality == 'paras':
-                        m.scores[self.metric].value *= 1
-                    if m.modality == 'title':
-                        m.scores[self.metric].value *= 1
-                    if m.modality == 'court':
-                        m.scores[self.metric].value *= 1
-
-                chunk_match_list.sort(
-                    key=lambda m: self.distance_mult * m.scores[self.metric].value
-                )
-
+                num_modalities = frozenset([m.modality for m in chunk_match_list])
                 operands = []
                 for m in chunk_match_list:
                     o = NamedScore(
                             op_name=f'{m.location[0]}' if m.location else '',
                             value=m.scores[self.metric].value,
                             ref_id=m.parent_id,
-                            description=f'{m.text} ',
+                            description=f'#{m.modality}#{m.text}',
                         )
                     operands.append(o)
 
-                
+                # sort by # of match sources
                 match = chunk_match_list[0]
                 match.id = chunk_match_list[0].parent_id
                 match.scores[self.metric].set_attrs(operands=operands)
+                match.scores['num_modalities'] = len(num_modalities) if match.scores[self.metric].value > 1e-5 else MAX_MODALITIES
+                match.pop('embedding')
                 doc.matches.append(match)
 
             doc.matches.sort(
-                key=lambda d: self.distance_mult * d.scores[self.metric].value
-            )
+                key=lambda d: (
+                    -d.scores['num_modalities'].value,
+                    self.distance_mult * d.scores[self.metric].value))
             doc.matches = doc.matches[:top_k]
-
 
             # trim `chunks` and `tags`
             doc.pop('chunks', 'tags')
@@ -437,3 +422,10 @@ class CaseNumSegmenter(Executor):
             if t not in self._char_blacklist])
 
 
+class ChunkMatchesMerger(Executor):
+    @requests(on='\search')
+    def merge(self, docs: DocumentArray, parameters: Optional[Dict]=None, **kwargs):
+        top_k = int(parameters.get('top_k', 10))
+        for doc in docs:
+            for chunk in doc.chunks:
+                pass

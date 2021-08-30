@@ -34,8 +34,14 @@ executors:
        default_traversal_paths:
          - 'c'
          - 'cc'
+       default_top_k: 100
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: 'chunk_merger'
+    uses:
+      jtype: AggregateRanker
+    py_modules:
+      - executors.py
   - name: 'name_segmenter'
     uses:
       jtype: IndexNameSegmenter
@@ -64,4 +70,4 @@ executors:
       default_traversal_paths:
         - 'r'
         - 'c'
-    needs: ['chunk_indexer', 'name_indexer', 'case_num_indexer']
+    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
