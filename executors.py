@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Iterable, Optional
 from itertools import groupby
 from gensim.summarization import bm25
 import numpy as np
@@ -12,7 +12,9 @@ import pkuseg
 MAX_MODALITIES = 100
 
 from zhon.hanzi import punctuation as chinese_punctuation  # 中文标点符号
+
 chi_punc = '|'.join([c for c in chinese_punctuation])
+
 
 # 方法2：在切分后，过滤掉split返回的list中的空字符串
 # filter_data()函数的功能是：对于一个由string组成的list [str1, str2, str3, ......]，过滤掉那些空字符串''、特殊字符串'\n'，并返回过滤后的新list
@@ -40,7 +42,9 @@ class IndexSentenceSegmenter(Executor):
                 for para in paras:
                     if not para['content']:
                         continue
-                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea', 'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '基础信息', '本院认为', '裁判结果', '调解结果']:
+                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea',
+                                       'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '基础信息', '本院认为', '裁判结果',
+                                       '调解结果']:
                         continue
                     for p_idx, p in enumerate(para['content'].split('\n')):
                         s_list = filter_data(re.split(r'' + ('[。]'), p))
@@ -85,7 +89,7 @@ class IndexSentenceSegmenter(Executor):
             if causes:
                 for cause in causes:
                     if cause in ['其他', ]:
-                       continue
+                        continue
                     if not cause:
                         continue
                     _chunk = Document(
@@ -112,7 +116,7 @@ class IndexSentenceSegmenter(Executor):
             # topCause+docType chunk
             if top_cause and doc_type:
                 _chunk = Document(
-                    text=top_cause+doc_type, parent_id=doc.id, modality='topCause_docType'
+                    text=top_cause + doc_type, parent_id=doc.id, modality='topCause_docType'
                 )
                 doc.chunks.append(_chunk)
 
@@ -129,7 +133,7 @@ class IndexSentenceSegmenter(Executor):
             # trialRound+docType
             if trial_round and doc_type:
                 _chunk = Document(
-                    text=trial_round+doc_type,
+                    text=trial_round + doc_type,
                     parent_id=doc.id,
                     modality='trialRound_docType'
                 )
@@ -148,8 +152,8 @@ class IndexSentenceSegmenter(Executor):
             if doc.tags['_source']['court']:
                 court_ = doc.tags['_source']['court']
                 _chunk = Document(
-                        text=court_, parent_id=doc.id, modality='court'
-                        )
+                    text=court_, parent_id=doc.id, modality='court'
+                )
                 doc.chunks.append(_chunk)
 
         return DocumentArray([d for d in docs if d.chunks])
@@ -176,12 +180,12 @@ class QuerySentenceSegmenter(Executor):
 
 class AggregateRanker(Executor):
     def __init__(
-        self,
-        default_top_k: int = 5,
-        default_traversal_paths: List[str] = ['r'],
-        metric: str = 'cosine',
-        is_distance: bool = False,
-        **kwargs,
+            self,
+            default_top_k: int = 5,
+            default_traversal_paths: List[str] = ['r'],
+            metric: str = 'cosine',
+            is_distance: bool = False,
+            **kwargs,
     ):
         super().__init__(**kwargs)
         self.default_top_k = default_top_k
@@ -213,18 +217,19 @@ class AggregateRanker(Executor):
                 operands = []
                 for m in chunk_match_list:
                     o = NamedScore(
-                            op_name=f'{m.location[0]}' if m.location else '',
-                            value=m.scores[self.metric].value,
-                            ref_id=m.parent_id,
-                            description=f'#{m.modality}#{m.text}',
-                        )
+                        op_name=f'{m.location[0]}' if m.location else '',
+                        value=m.scores[self.metric].value,
+                        ref_id=m.parent_id,
+                        description=f'#{m.modality}#{m.text}',
+                    )
                     operands.append(o)
 
                 # sort by # of match sources
                 match = chunk_match_list[0]
                 match.id = chunk_match_list[0].parent_id
                 match.scores[self.metric].set_attrs(operands=operands)
-                match.scores['num_modalities'] = len(num_modalities) if match.scores[self.metric].value > 1e-5 else MAX_MODALITIES
+                match.scores['num_modalities'] = len(num_modalities) if match.scores[
+                                                                            self.metric].value > 1e-5 else MAX_MODALITIES
                 match.pop('embedding')
                 doc.matches.append(match)
 
@@ -254,22 +259,22 @@ class DebugExecutor(Executor):
         self.logger = JinaLogger(self.__class__.__name__)
         self.metric = metric
 
-    @requests
+    @requests(on='/search')
     def debug(self, docs, **kwargs):
         for i, d in enumerate(docs):
             print(f'[{i}] chunks: {len(d.chunks)}')
             for j, c in enumerate(d.chunks):
                 if j >= 3:
                     print(f'\t ...')
-                    assert c.embedding.shape == (768,)
+                    # assert c.embedding.shape == (768,)
                 else:
                     print(f'\t emb shape: {c.embedding.shape}')
-                print(
-                    f'modality: {c.matches[0].parent_id} - {c.matches[0].modality} - {c.matches[0].scores[self.metric].value}'
-                )
-                print(
-                    f'[{i} - {j}]: {len(c.matches)} - [{" ".join([str(m.scores[self.metric].value) for m in c.matches])}]'
-                )
+                # print(
+                #     f'modality: {c.matches[0].parent_id} - {c.matches[0].modality} - {c.matches[0].scores[self.metric].value}'
+                # )
+                # print(
+                #     f'[{i} - {j}]: {len(c.matches)} - [{" ".join([str(m.scores[self.metric].value) for m in c.matches])}]'
+                # )
 
 
 class IndexNameSegmenter(Executor):
@@ -423,9 +428,25 @@ class CaseNumSegmenter(Executor):
 
 
 class ChunkMatchesMerger(Executor):
-    @requests(on='\search')
-    def merge(self, docs: DocumentArray, parameters: Optional[Dict]=None, **kwargs):
+    @requests(on='/search')
+    def merge(self, docs: DocumentArray, parameters: Optional[Dict] = None, **kwargs):
         top_k = int(parameters.get('top_k', 10))
         for doc in docs:
             for chunk in doc.chunks:
                 pass
+
+
+class ChunkFilter(Executor):
+    def __init__(self, traversal_paths: Iterable[str] = ('r', ), *args, **kwargs):
+        super(ChunkFilter, self).__init__(*args, **kwargs)
+        self.traversal_paths = traversal_paths
+
+    @requests(on='/index')
+    def filter(self, docs: Optional[DocumentArray] = None, **kwargs):
+        if not docs:
+            return
+        filtered_docs = DocumentArray()
+        for d in docs.traverse_flat(self.traversal_paths):
+            d.pop('chunks')
+            filtered_docs.append(d)
+        return filtered_docs

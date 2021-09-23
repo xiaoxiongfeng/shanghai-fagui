@@ -9,6 +9,7 @@ def config():
     os.environ["JINA_WORKSPACE"] = "./workspace"
     os.environ["JINA_DUMP_PATH_DOC"] = "./workspace/dump_doc"
     os.environ["JINA_DUMP_PATH_CHUNK"] = "./workspace/dump_chunk"
+    os.environ["JINA_WORKSPACE_CHUNK_CHUNK"] = "./workspace/ws_chunk_chunk"
     os.environ["JINA_WORKSPACE_DOC"] = "./workspace/ws_doc"
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 

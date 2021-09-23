@@ -16,32 +16,50 @@ executors:
     py_modules:
       - executors.py
   - name: 'encoder'
-    uses: 'jinahub://TransformerTorchEncoder'
-    parallel: 2
+    uses: 'jinahub://TransformerTorchEncoder/v0.1'
+    parallel: 1
     uses_with:
       pretrained_model_name_or_path: 'junnyu/wobert_chinese_base'
       pooling_strategy: 'cls'
-      on_gpu: False
-      default_batch_size: 128
+      device: 'cpu'
       max_length: 256
+      default_batch_size: 128
       default_traversal_paths:
         - 'c'
         - 'cc'
+  - name: 'chunk_filter'
+    uses:
+      jtype: ChunkFilter
+      with:
+        traversal_paths: ['c',]
+    py_modules:
+      - executors.py
   - name: 'chunk_indexer'
-    uses: 'jinahub://SimpleIndexer'
-    uses_with:
-       index_file_name: ${JINA_DUMP_PATH_CHUNK}
-       default_traversal_paths:
-         - 'c'
-         - 'cc'
-       default_top_k: 100
+    uses: 'jinahub://SimpleIndexer/v0.3'
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
+  - name: 'chunk_chunk_filter'
+    uses:
+      jtype: ChunkFilter
+      with:
+        traversal_paths: ['cc',]
+    py_modules:
+      - executors.py
+    needs: 'encoder'
+  - name: 'chunk_chunk_indexer'
+    uses: 'jinahub://SimpleIndexer/v0.3'
+    uses_metas:
+      workspace: ${JINA_WORKSPACE_CHUNK_CHUNK}
   - name: 'chunk_merger'
     uses:
       jtype: AggregateRanker
+      with:
+        is_distance: True
     py_modules:
       - executors.py
+    needs:
+      - 'chunk_indexer'
+      - 'chunk_chunk_indexer'
   - name: 'name_segmenter'
     uses:
       jtype: IndexNameSegmenter
@@ -66,8 +84,8 @@ executors:
       - executors.py
   - name: 'merger'
     uses: 'jinahub://MatchMerger'
-    usess_with:
+    uses_with:
       default_traversal_paths:
         - 'r'
         - 'c'
-    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
+    needs: ['chunk_merger', 'chunk_chunk_indexer', 'name_indexer', 'case_num_indexer']
