@@ -36,6 +36,7 @@ executors:
       - executors.py
   - name: 'chunk_indexer'
     uses: 'jinahub://SimpleIndexer/v0.4'
+    force: True
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
   - name: 'chunk_chunk_filter'
@@ -48,6 +49,7 @@ executors:
     needs: 'encoder'
   - name: 'chunk_chunk_indexer'
     uses: 'jinahub://SimpleIndexer/v0.4'
+    force: True
     uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK_CHUNK}
   - name: 'chunk_merger'
