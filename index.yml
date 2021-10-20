@@ -10,8 +10,7 @@ executors:
     py_modules:
       - executors.py
   - name: 'q_segmenter'
-    uses:
-      jtype: QuerySentenceSegmenter
+    uses: QuerySentenceSegmenter
     py_modules:
       - executors.py
   - name: 'encoder'
@@ -26,39 +25,27 @@ executors:
       default_traversal_paths:
         - 'c'
         - 'cc'
-  - name: 'chunk_filter'
-    uses: ChunkFilter
-    uses_with:
-      traversal_paths: ['c',]
-    py_modules:
-      - executors.py
   - name: 'chunk_indexer'
-    uses: 'jinahub://SimpleIndexer/v0.4'
-    uses_metas:
-       workspace: ${JINA_WORKSPACE_CHUNK}
-  - name: 'chunk_chunk_filter'
-    uses: ChunkFilter
+    uses: 'jinahub://FaissPostgresIndexer/v0.3'
     uses_with:
-      traversal_paths: ['cc',]
-    py_modules:
-      - executors.py
-    needs: 'encoder'
-  - name: 'chunk_chunk_indexer'
-    uses: 'jinahub://SimpleIndexer/v0.4'
-    uses_metas:
-      workspace: ${JINA_WORKSPACE_CHUNK_CHUNK}
+      total_shards: 1
+      default_traversal_paths:
+        - 'c'
+        - 'cc'
+      hostname: '127.0.0.1'
+      port: 5432
+      username: 'postgres'
+      password: '123456'
+      database: 'postgres'
+      table: 'chunk_indexer'
   - name: 'chunk_merger'
     uses: AggregateRanker
     uses_with:
       is_distance: True
     py_modules:
       - executors.py
-    needs:
-      - 'chunk_indexer'
-      - 'chunk_chunk_indexer'
   - name: 'name_segmenter'
-    uses:
-      jtype: IndexNameSegmenter
+    uses: IndexNameSegmenter
     py_modules:
       - executors.py
     needs: 'q_segmenter'
@@ -81,4 +68,4 @@ executors:
       default_traversal_paths:
         - 'r'
         - 'c'
-    needs: ['chunk_merger', 'chunk_chunk_indexer', 'name_indexer', 'case_num_indexer']
+    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']

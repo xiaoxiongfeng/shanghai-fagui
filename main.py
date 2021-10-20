@@ -38,6 +38,8 @@ def index_query(filename):
     f = Flow.load_config('index.yml')
     with f:
         f.post(on='/index', inputs=load_data(filename), request_size=2, show_progress=True)
+        f.post(on='/snapshot')
+        f.post(on='/sync', parameters={'only_delta': True})
         f.protocol = 'http'
         f.cors = True
         f.expose_endpoint(
