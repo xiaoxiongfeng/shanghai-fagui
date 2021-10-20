@@ -6,8 +6,7 @@ with:
 
 executors:
   - name: 'segmenter'
-    uses:
-      jtype: IndexSentenceSegmenter
+    uses: IndexSentenceSegmenter
     py_modules:
       - executors.py
   - name: 'q_segmenter'
@@ -28,35 +27,30 @@ executors:
         - 'c'
         - 'cc'
   - name: 'chunk_filter'
-    uses:
-      jtype: ChunkFilter
-      with:
-        traversal_paths: ['c',]
+    uses: ChunkFilter
+    uses_with:
+      traversal_paths: ['c',]
     py_modules:
       - executors.py
   - name: 'chunk_indexer'
     uses: 'jinahub://SimpleIndexer/v0.4'
-    force: True
     uses_metas:
        workspace: ${JINA_WORKSPACE_CHUNK}
   - name: 'chunk_chunk_filter'
-    uses:
-      jtype: ChunkFilter
-      with:
-        traversal_paths: ['cc',]
+    uses: ChunkFilter
+    uses_with:
+      traversal_paths: ['cc',]
     py_modules:
       - executors.py
     needs: 'encoder'
   - name: 'chunk_chunk_indexer'
     uses: 'jinahub://SimpleIndexer/v0.4'
-    force: True
     uses_metas:
       workspace: ${JINA_WORKSPACE_CHUNK_CHUNK}
   - name: 'chunk_merger'
-    uses:
-      jtype: AggregateRanker
-      with:
-        is_distance: True
+    uses: AggregateRanker
+    uses_with:
+      is_distance: True
     py_modules:
       - executors.py
     needs:
@@ -69,19 +63,16 @@ executors:
       - executors.py
     needs: 'q_segmenter'
   - name: 'name_indexer'
-    uses:
-      jtype: BM25Indexer
+    uses: BM25Indexer
     py_modules:
       - executors.py
   - name: 'case_num_segmenter'
-    uses:
-      jtype: CaseNumSegmenter
+    uses: CaseNumSegmenter
     py_modules:
       - executors.py
     needs: 'q_segmenter'
   - name: 'case_num_indexer'
-    uses:
-      jtype: BM25Indexer
+    uses: BM25Indexer
     py_modules:
       - executors.py
   - name: 'merger'
