@@ -63,7 +63,7 @@ executors:
     py_modules:
       - executors.py
   - name: 'merger'
-    uses: 'jinahub://MatchMerger/v0.1'
+    uses: 'jinahub://MatchMerger/v0.2'
     uses_with:
       default_traversal_paths:
         - 'r'
