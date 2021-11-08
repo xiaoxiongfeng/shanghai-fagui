@@ -1,8 +1,8 @@
-jina==2.1.11
-zhon==1.1.5
-pkuseg==0.0.25
+jina>=2.3.0
+zhon>=1.1.5
+pkuseg>=0.0.25
 gensim==3.8.3
-click==7.1.2
-tensorflow_cpu==2.5.0
-transformers==4.6.1
+click>=7.1.2
+tensorflow_cpu>=2.5.0
+transformers>=4.12.0
 git+https://github.com/jina-ai/jina-commons

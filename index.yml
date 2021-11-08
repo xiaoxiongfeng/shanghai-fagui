@@ -3,7 +3,6 @@ version: '1'
 with:
   port_expose: 45678
   no_debug_endpoints: True
-
 executors:
   - name: 'segmenter'
     uses: IndexSentenceSegmenter
@@ -14,15 +13,15 @@ executors:
     py_modules:
       - executors.py
   - name: 'encoder'
-    uses: 'jinahub://TransformerTorchEncoder/v0.1'
+    uses: 'jinahub://TransformerTorchEncoder/v0.3'
     parallel: 1
     uses_with:
       pretrained_model_name_or_path: 'junnyu/wobert_chinese_base'
       pooling_strategy: 'cls'
       device: 'cpu'
       max_length: 256
-      default_batch_size: 128
-      default_traversal_paths:
+      batch_size: 128
+      traversal_paths:
         - 'c'
         - 'cc'
   - name: 'chunk_indexer'
@@ -63,7 +62,7 @@ executors:
     py_modules:
       - executors.py
   - name: 'merger'
-    uses: 'jinahub://MatchMerger/v0.2'
+    uses: 'jinahub+docker://MatchMerger/v0.2'
     uses_with:
       default_traversal_paths:
         - 'r'
