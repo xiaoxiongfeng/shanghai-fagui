@@ -35,32 +35,32 @@ executors:
       password: '123456'
       database: 'postgres'
       table: 'chunk_indexer'
-#  - name: 'chunk_merger'
-#    uses: AggregateRanker
-#    uses_with:
-#      is_distance: True
-#    py_modules:
-#      - executors.py
-#  - name: 'name_segmenter'
-#    uses: IndexNameSegmenter
-#    py_modules:
-#      - executors.py
-#    needs: 'q_segmenter'
-#  - name: 'name_indexer'
-#    uses: BM25Indexer
-#    py_modules:
-#      - executors.py
-#  - name: 'case_num_segmenter'
-#    uses: CaseNumSegmenter
-#    py_modules:
-#      - executors.py
-#    needs: 'q_segmenter'
-#  - name: 'case_num_indexer'
-#    uses: BM25Indexer
-#    py_modules:
-#      - executors.py
-#  - name: 'merger'
-#    uses: 'jinahub+docker://MatchMerger/v0.2'
-#    uses_with:
-#      default_traversal_paths: 'r,c'
-#    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
+  - name: 'chunk_merger'
+    uses: AggregateRanker
+    uses_with:
+      is_distance: True
+    py_modules:
+      - executors.py
+  - name: 'name_segmenter'
+    uses: IndexNameSegmenter
+    py_modules:
+      - executors.py
+    needs: 'q_segmenter'
+  - name: 'name_indexer'
+    uses: BM25Indexer
+    py_modules:
+      - executors.py
+  - name: 'case_num_segmenter'
+    uses: CaseNumSegmenter
+    py_modules:
+      - executors.py
+    needs: 'q_segmenter'
+  - name: 'case_num_indexer'
+    uses: BM25Indexer
+    py_modules:
+      - executors.py
+  - name: 'merger'
+    uses: 'jinahub+docker://MatchMerger/v0.2'
+    uses_with:
+      default_traversal_paths: 'r,c'
+    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
