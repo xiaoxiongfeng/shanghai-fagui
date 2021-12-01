@@ -38,15 +38,16 @@ def index_query(filename):
     f = Flow.load_config('index.yml')
     with f:
         f.post(on='/index', inputs=load_data(filename), request_size=2, show_progress=True)
-        f.post(on='/snapshot')
-        f.post(on='/sync', parameters={'only_delta': True})
+        f.post(on='/sync')
+        resp = f.post(on='/status', return_results=True)
+        print(f'psql docs:  {resp[0].docs[0].tags["psql_docs"]}')
+        print(f'hnsw docs: {resp[0].docs[0].tags["hnsw_docs"]}')
         f.protocol = 'http'
         f.cors = True
         f.expose_endpoint(
             '/search',
             summary='Search the docs',
-            description='example: {"data": [{"text": "信用卡纠纷"}], "parameters": {"top_k": 10}}',
-        )
+            description='example: {"data": [{"text": "信用卡纠纷"}], "parameters": {"limit": 10, "traversal_paths": "r,c"}}')
         f.block()
 
 @click.command()

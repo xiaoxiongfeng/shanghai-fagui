@@ -198,7 +198,7 @@ class AggregateRanker(Executor):
 
     @requests(on='/search')
     def rank(self, docs: DocumentArray, parameters: Dict = None, **kwargs):
-        top_k = int(parameters.get('top_k', self.default_top_k))
+        limit = int(parameters.get('limit', self.default_top_k))
 
         traversal_paths = parameters.get(
             'traversal_paths', self.default_traversal_paths)
@@ -237,7 +237,7 @@ class AggregateRanker(Executor):
                 key=lambda d: (
                     -d.scores['num_modalities'].value,
                     self.distance_mult * d.scores[self.metric].value))
-            doc.matches = doc.matches[:top_k]
+            doc.matches = doc.matches[:limit]
 
             # trim `chunks` and `tags`
             doc.pop('chunks', 'tags')
@@ -372,14 +372,14 @@ class BM25Indexer(Executor):
         if self._model is None or self._flush:
             self._model = bm25.BM25(self._corpus)
             self._flush = False
-        top_k = min(len(self._corpus), int(parameters.get('top_k', 10)))
+        limit = min(len(self._corpus), int(parameters.get('limit', 10)))
         for doc in docs:
             tokens = []
             for c in doc.chunks:
                 tokens += c.text.split(' ')
             scores = np.array(self._model.get_scores(tokens))
-            # return top_k from the scores and the Documents
-            ind = np.argpartition(scores, -top_k)[-top_k:]
+            # return limit from the scores and the Documents
+            ind = np.argpartition(scores, -limit)[-limit:]
             ind = sorted(ind, key=lambda x: scores[x], reverse=True)
             for idx in ind:
                 score = scores[idx]
@@ -430,7 +430,7 @@ class CaseNumSegmenter(Executor):
 class ChunkMatchesMerger(Executor):
     @requests(on='/search')
     def merge(self, docs: DocumentArray, parameters: Optional[Dict] = None, **kwargs):
-        top_k = int(parameters.get('top_k', 10))
+        limit = int(parameters.get('limit', 10))
         for doc in docs:
             for chunk in doc.chunks:
                 pass

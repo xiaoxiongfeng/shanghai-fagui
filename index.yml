@@ -21,50 +21,46 @@ executors:
       device: 'cpu'
       max_length: 256
       batch_size: 128
-      traversal_paths:
-        - 'c'
-        - 'cc'
+      traversal_paths: 'c,cc'
   - name: 'chunk_indexer'
-    uses: 'jinahub://FaissPostgresIndexer/v0.3'
+    uses: 'jinahub://HNSWPostgresIndexer/v0.2'
+    install_requirements: True
     uses_with:
-      total_shards: 1
-      default_traversal_paths:
-        - 'c'
-        - 'cc'
+      dim: 768
+      startup_sync: False
+      traversal_paths: 'c,cc'
       hostname: '127.0.0.1'
       port: 5432
       username: 'postgres'
       password: '123456'
       database: 'postgres'
       table: 'chunk_indexer'
-  - name: 'chunk_merger'
-    uses: AggregateRanker
-    uses_with:
-      is_distance: True
-    py_modules:
-      - executors.py
-  - name: 'name_segmenter'
-    uses: IndexNameSegmenter
-    py_modules:
-      - executors.py
-    needs: 'q_segmenter'
-  - name: 'name_indexer'
-    uses: BM25Indexer
-    py_modules:
-      - executors.py
-  - name: 'case_num_segmenter'
-    uses: CaseNumSegmenter
-    py_modules:
-      - executors.py
-    needs: 'q_segmenter'
-  - name: 'case_num_indexer'
-    uses: BM25Indexer
-    py_modules:
-      - executors.py
-  - name: 'merger'
-    uses: 'jinahub+docker://MatchMerger/v0.2'
-    uses_with:
-      default_traversal_paths:
-        - 'r'
-        - 'c'
-    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
+#  - name: 'chunk_merger'
+#    uses: AggregateRanker
+#    uses_with:
+#      is_distance: True
+#    py_modules:
+#      - executors.py
+#  - name: 'name_segmenter'
+#    uses: IndexNameSegmenter
+#    py_modules:
+#      - executors.py
+#    needs: 'q_segmenter'
+#  - name: 'name_indexer'
+#    uses: BM25Indexer
+#    py_modules:
+#      - executors.py
+#  - name: 'case_num_segmenter'
+#    uses: CaseNumSegmenter
+#    py_modules:
+#      - executors.py
+#    needs: 'q_segmenter'
+#  - name: 'case_num_indexer'
+#    uses: BM25Indexer
+#    py_modules:
+#      - executors.py
+#  - name: 'merger'
+#    uses: 'jinahub+docker://MatchMerger/v0.2'
+#    uses_with:
+#      default_traversal_paths: 'r,c'
+#    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
