@@ -1,4 +1,4 @@
-jina>=2.5.0
+jina==2.5.0
 zhon>=1.1.5
 pkuseg>=0.0.25
 gensim==3.8.3
@@ -10,5 +10,3 @@ rjieba
 psycopg2-binary==2.8.6
 bidict
 faiss-cpu==1.7.1
-jina-commons @ git+https://github.com/jina-ai/jina-commons.git#egg=jina-commons
-jina_executors @ git+https://github.com/jina-ai/executors@refactor-improve-indexer#egg=jinahub
