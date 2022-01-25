@@ -16,7 +16,7 @@ executors:
     uses: 'jinahub://TransformerTorchEncoder/v0.3'
     parallel: 1
     uses_with:
-      pretrained_model_name_or_path: 'junnyu/wobert_chinese_base'
+      pretrained_model_name_or_path: '/home/xxf/finetuneBERT'
       pooling_strategy: 'cls'
       device: 'cpu'
       max_length: 256
@@ -24,38 +24,27 @@ executors:
       traversal_paths: 'c,cc'
   - name: 'chunk_indexer'
     uses: 'jinahub://HNSWPostgresIndexer/v0.2'
-    install_requirements: True
     uses_with:
       dim: 768
       startup_sync: False
-      traversal_paths: 'c,cc'
       hostname: '127.0.0.1'
       port: 5432
       username: 'postgres'
       password: '123456'
       database: 'postgres'
-      table: 'chunk_indexer'
+      table: 'fagui_0125'
   - name: 'chunk_merger'
     uses: AggregateRanker
     uses_with:
       is_distance: True
     py_modules:
       - executors.py
-  - name: 'name_segmenter'
-    uses: IndexNameSegmenter
+  - name: 'noun_segmenter'
+    uses: IndexNounSegmenter
     py_modules:
       - executors.py
     needs: 'q_segmenter'
-  - name: 'name_indexer'
-    uses: BM25Indexer
-    py_modules:
-      - executors.py
-  - name: 'case_num_segmenter'
-    uses: CaseNumSegmenter
-    py_modules:
-      - executors.py
-    needs: 'q_segmenter'
-  - name: 'case_num_indexer'
+  - name: 'noun_indexer'
     uses: BM25Indexer
     py_modules:
       - executors.py
@@ -63,4 +52,4 @@ executors:
     uses: 'jinahub+docker://MatchMerger/v0.2'
     uses_with:
       default_traversal_paths: 'r,c'
-    needs: ['chunk_merger', 'name_indexer', 'case_num_indexer']
+    needs: ['chunk_merger', 'noun_indexer']

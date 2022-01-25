@@ -34,29 +34,22 @@ class IndexSentenceSegmenter(Executor):
         if not docs:
             return
         for doc in docs:
-            if '_source' not in doc.tags:
-                continue
-            # paras chunk, we need to filter the paras based on types
-            paras = doc.tags['_source'].get('paras', None)
-            if paras:
-                for para in paras:
-                    if not para['content']:
-                        continue
-                    if para['tag'] in ['书记员', '审判人员', 'judges', 'basics', 'party_info', '附', 'defendant_plea',
-                                       'plaintiff_claims', '审判法官', 'court_consider', '当事人信息', '基础信息', '本院认为', '裁判结果',
-                                       '调解结果']:
-                        continue
-                    for p_idx, p in enumerate(para['content'].split('\n')):
-                        s_list = filter_data(re.split(r'' + ('[。]'), p))
-                        for s_idx, s in enumerate(s_list):
-                            s = s.strip()
-                            _chunk = Document(
-                                text=s[-64:], parent_id=doc.id, modality='paras', location=[p_idx, s_idx])
-                            _chunk.tags['para_tag'] = para['tag']
-                            doc.chunks.append(_chunk)
-
+            # content chunk
+            for s_idx_content, s_content in enumerate(doc.text.split('\n')):
+                s_content = s_content.strip()
+                if not s_content:
+                    continue
+                if len(s_content) > 65:
+                    s_content = s_content[:64]
+                _chunk = Document(
+                    text=s_content,
+                    parent_id=doc.id,
+                    location=[s_idx_content],
+                    modality='content',
+                )
+                doc.chunks.append(_chunk)
             # title chunk
-            title = doc.tags['_source'].get('title', None)
+            title = doc.tags['_title']
             if title:
                 title_list = title.split('\n')
                 title_text = ''.join(title_list)
@@ -84,85 +77,12 @@ class IndexSentenceSegmenter(Executor):
                         _chunk.chunks.append(_chunk_chunk)
                 doc.chunks.append(_chunk)
 
-            # causes chunk
-            causes = doc.tags['_source'].get('causes', None)
-            if causes:
-                for cause in causes:
-                    if cause in ['其他', ]:
-                        continue
-                    if not cause:
-                        continue
-                    _chunk = Document(
-                        text=cause, parent_id=doc.id, modality='causes'
-                    )
-                    doc.chunks.append(_chunk)
-
-            # docType chunk
-            doc_type = doc.tags['_source'].get('docType', None)
-            if doc_type:
-                _chunk = Document(
-                    text=doc_type, parent_id=doc.id, modality='docType'
-                )
-                doc.chunks.append(_chunk)
-
-            # topCause chunk
-            top_cause = doc.tags['_source'].get('topCause', None)
-            if top_cause:
-                _chunk = Document(
-                    text=top_cause, parent_id=doc.id, modality='topCause'
-                )
-                doc.chunks.append(_chunk)
-
-            # topCause+docType chunk
-            if top_cause and doc_type:
-                _chunk = Document(
-                    text=top_cause + doc_type, parent_id=doc.id, modality='topCause_docType'
-                )
-                doc.chunks.append(_chunk)
-
-            # trialRound chunk
-            trial_round = doc.tags['_source'].get('trialRound', None)
-            if trial_round in ['其他', ]:
-                trial_round = None
-            if trial_round:
-                _chunk = Document(
-                    text=trial_round, parent_id=doc.id, modality='trialRound'
-                )
-                doc.chunks.append(_chunk)
-
-            # trialRound+docType
-            if trial_round and doc_type:
-                _chunk = Document(
-                    text=trial_round + doc_type,
-                    parent_id=doc.id,
-                    modality='trialRound_docType'
-                )
-                doc.chunks.append(_chunk)
-
-            # topCause+docType chunk
-            if trial_round and top_cause and doc_type:
-                _chunk = Document(
-                    text=trial_round + top_cause + doc_type,
-                    parent_id=doc.id,
-                    modality='trialRound_topCause_docType'
-                )
-                doc.chunks.append(_chunk)
-
-            # court chunk
-            if doc.tags['_source']['court']:
-                court_ = doc.tags['_source']['court']
-                _chunk = Document(
-                    text=court_, parent_id=doc.id, modality='court'
-                )
-                doc.chunks.append(_chunk)
-
         return DocumentArray([d for d in docs if d.chunks])
 
 
 class QuerySentenceSegmenter(Executor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.seg = pkuseg.pkuseg(model_name='news', postag=False)
 
     @requests(on='/search')
     def segment(self, docs: DocumentArray, **kwargs):
@@ -174,6 +94,23 @@ class QuerySentenceSegmenter(Executor):
                 _chunk = Document(
                     text=s[:64], parent_id=doc.id, location=[s_idx]
                 )
+
+                s_list = filter_data(re.split(r'' + ('[' + chi_punc + ' ' + ']'), s))
+                if len(s_list) <= 1:
+                    continue
+                for s_idx, s in enumerate(s_list):
+                    s = s.strip()
+                    if not s:
+                        continue
+                    if s == _chunk.text:
+                        continue
+                    _chunk_chunk = Document(
+                        text=s[-64:],
+                        parent_id=doc.id,
+                        location=[s_idx, s_idx],
+                        modality='query_subsentence',
+                    )
+                    _chunk.chunks.append(_chunk_chunk)
                 doc.chunks.append(_chunk)
         return DocumentArray([d for d in docs if d.chunks])
 
@@ -277,7 +214,7 @@ class DebugExecutor(Executor):
                 # )
 
 
-class IndexNameSegmenter(Executor):
+class IndexNounSegmenter(Executor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.seg = pkuseg.pkuseg(model_name='news')
@@ -296,7 +233,7 @@ class IndexNameSegmenter(Executor):
                 c.text = ' '.join(self.seg.cut(c.text))
 
     @requests(on='/index')
-    def extract_name(self, docs: Optional[DocumentArray], **kwargs):
+    def extract_noun(self, docs: Optional[DocumentArray], **kwargs):
         if not docs:
             return
         for doc in docs:
@@ -388,43 +325,6 @@ class BM25Indexer(Executor):
                 m = self._doc_list[idx]
                 m.scores['bm25'] = NamedScore(value=score)
                 doc.matches.append(m)
-
-
-class CaseNumSegmenter(Executor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.seg = pkuseg.pkuseg(model_name='news')
-        self._char_blacklist = frozenset(chinese_punctuation)
-
-    @requests(on='/index')
-    def extract_casenum(self, docs: Optional[DocumentArray], **kwargs):
-        if not docs:
-            return
-        for doc in docs:
-            _source = doc.tags.get('_source', None)
-            if not _source:
-                continue
-            _case_num = _source.get('caseNumber', None)
-            if not _case_num:
-                continue
-            doc.text = self._cut(_case_num)
-            doc.modality = 'caseNumber'
-            doc.pop('tags', 'chunks')
-
-    @requests(on='/search')
-    def segment(self, docs: Optional[DocumentArray], **kwargs):
-        if not docs:
-            return
-        for doc in docs:
-            for c in doc.chunks:
-                if not c.text:
-                    continue
-                c.text = self._cut(c.text)
-
-    def _cut(self, case_num_str):
-        return ' '.join([
-            t for t in self.seg.cut(case_num_str)
-            if t not in self._char_blacklist])
 
 
 class ChunkMatchesMerger(Executor):

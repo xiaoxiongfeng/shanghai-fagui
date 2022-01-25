@@ -14,7 +14,7 @@ def config():
     os.environ["JINA_WORKSPACE_CHUNK"] = "./workspace/ws_chunk"
 
 
-def load_data(data_fn='./toy-data/case_parse_100.json'):
+def load_data(data_fn='data/processed_data.json'):
     counter = 0
     with open(data_fn, 'r') as f:
         for l in f:
@@ -22,7 +22,7 @@ def load_data(data_fn='./toy-data/case_parse_100.json'):
                 continue
             doc = Document(json.loads(l))
             try:
-                doc.text = doc.tags['_source']['title']
+                doc.text = doc.tags['_content']
                 doc.id = doc.tags['_id']
                 counter += 1
                 yield doc
@@ -37,7 +37,7 @@ def index_query(filename):
         shutil.rmtree(os.environ.get('JINA_WORKSPACE'))
     f = Flow.load_config('index.yml')
     with f:
-        f.post(on='/index', inputs=load_data(filename), request_size=2, show_progress=True)
+        f.post(on='/index', inputs=load_data(filename), request_size=1, show_progress=True)
         f.post(on='/sync')
         resp = f.post(on='/status', return_results=True)
         print(f'psql docs:  {resp[0].docs[0].tags["psql_docs"]}')
@@ -55,7 +55,7 @@ def index_query(filename):
     '--filename',
     '-f',
     type=click.Path(exists=True),
-    default='toy-data/case_parse_10.json')
+    default='data/processed_data.json')
 def main(filename):
     config()
     index_query(filename)
