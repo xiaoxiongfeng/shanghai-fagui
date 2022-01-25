@@ -38,12 +38,12 @@ def index_query(filename):
     f = Flow.load_config('index.yml')
 
     with f:
-        f.post(on='/index', inputs=load_data(filename), request_size=1, show_progress=True)
+        # f.block()
+        f.post(on='/index', inputs=load_data(filename), request_size=1)
         f.post(on='/sync')
         resp = f.post(on='/status', return_results=True)
         print(f'psql docs:  {resp[0].docs[0].tags["psql_docs"]}')
         print(f'hnsw docs: {resp[0].docs[0].tags["hnsw_docs"]}')
-        f.protocol = 'http'
         f.cors = True
         f.expose_endpoint(
             '/search',

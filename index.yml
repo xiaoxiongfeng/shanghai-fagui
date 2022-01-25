@@ -1,8 +1,8 @@
 jtype: Flow
 version: '1'
 with:
-  port_expose: 25031
-  no_debug_endpoints: True
+  protocol: 'http'
+  port_expose: 25037
 executors:
   - name: 'segmenter'
     uses: IndexSentenceSegmenter
@@ -32,7 +32,7 @@ executors:
       username: 'postgres'
       password: '123456'
       database: 'postgres'
-      table: 'fagui_xxf'
+      table: 'fagui_1523'
   - name: 'chunk_merger'
     uses: AggregateRanker
     uses_with:
