@@ -1,0 +1,55 @@
+jtype: Flow
+version: '1'
+with:
+  port_expose: 25031
+  no_debug_endpoints: True
+executors:
+  - name: 'segmenter'
+    uses: IndexSentenceSegmenter
+    py_modules:
+      - executors.py
+  - name: 'q_segmenter'
+    uses: QuerySentenceSegmenter
+    py_modules:
+      - executors.py
+  - name: 'encoder'
+    uses: 'jinahub://TransformerTorchEncoder/v0.3'
+    parallel: 1
+    uses_with:
+      pretrained_model_name_or_path: '/home/xxf/finetuneBERT'
+      pooling_strategy: 'cls'
+      device: 'cuda:2'
+      max_length: 256
+      batch_size: 128
+      traversal_paths: 'c,cc'
+  - name: 'chunk_indexer'
+    uses: 'jinahub://HNSWPostgresIndexer/v0.2'
+    uses_with:
+      dim: 768
+      startup_sync: False
+      hostname: '127.0.0.1'
+      port: 5432
+      username: 'postgres'
+      password: '123456'
+      database: 'postgres'
+      table: 'fagui_xxf'
+  - name: 'chunk_merger'
+    uses: AggregateRanker
+    uses_with:
+      is_distance: True
+    py_modules:
+      - executors.py
+  - name: 'noun_segmenter'
+    uses: IndexNounSegmenter
+    py_modules:
+      - executors.py
+    needs: 'q_segmenter'
+  - name: 'noun_indexer'
+    uses: BM25Indexer
+    py_modules:
+      - executors.py
+  - name: 'merger'
+    uses: 'jinahub+docker://MatchMerger/v0.2'
+    uses_with:
+      default_traversal_paths: 'r,c'
+    needs: ['chunk_merger', 'noun_indexer']
