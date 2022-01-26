@@ -39,7 +39,7 @@ def index_query(filename):
 
     with f:
         # f.block()
-        f.post(on='/index', inputs=load_data(filename), request_size=1)
+        f.post(on='/index', inputs=load_data(filename), request_size=1, return_results=True)
         f.post(on='/sync')
         resp = f.post(on='/status', return_results=True)
         print(f'psql docs:  {resp[0].docs[0].tags["psql_docs"]}')
