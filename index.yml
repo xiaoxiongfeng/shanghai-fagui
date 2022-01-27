@@ -27,6 +27,7 @@ executors:
     uses_with:
       dim: 768
       startup_sync: False
+      traversal_paths: 'c,cc'
       hostname: '127.0.0.1'
       port: 5432
       username: 'postgres'
